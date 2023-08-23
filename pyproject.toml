@@ -1,0 +1,60 @@
+[project]
+name = "bisque"
+dynamic = ["version"]
+description = "Web scraping into structured Pydantic data models."
+authors = [
+    {name = "Louis Maddox", email = "louismmx@gmail.com"},
+]
+keywords = [
+    "HTML",
+    "XML",
+    "parse",
+    "soup",
+    "pydantic",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Topic :: Software Development :: Libraries",
+    'Framework :: Pydantic',
+    'Framework :: Pydantic :: 2',
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Text Processing :: Markup :: HTML",
+    "Topic :: Text Processing :: Markup :: SGML",
+    "Topic :: Text Processing :: Markup :: XML",
+]
+dependencies = [
+    "pydantic>=2.1.1",
+    "beautifulsoup4>=4.12.2",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "MIT"}
+
+[project.optional-dependencies]
+html5lib = [
+    "html5lib>=1.1",
+]
+lxml = [
+    "lxml>=4.9.3",
+]
+[project.urls]
+Homepage = "https://github.com/lmmx/bisque"
+Repository = "https://github.com/lmmx/bisque.git"
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm]
+version = { source = "file", path = "src/bisque/__init__.py" }
+
+[tool.pdm.dev-dependencies]
+test = [
+    "pytest>=7.4.0",
+]
+
+[tool.isort]
+known_first_party = ["bisque"]
