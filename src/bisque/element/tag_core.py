@@ -1825,13 +1825,13 @@ class Tag(PageElement):
                 else:
                     if isinstance(val, list) or isinstance(val, tuple):
                         val = " ".join(val)
-                    elif not isinstance(val, str):
-                        val = str(val)
                     elif (
                         isinstance(val, AttributeValueWithCharsetSubstitution)
                         and eventual_encoding is not None
                     ):
                         val = val.encode(eventual_encoding)
+                    elif not isinstance(val, str):
+                        val = str(val)
 
                     text = formatter.attribute_value(val)
                     decoded = str(key) + "=" + formatter.quoted_attribute_value(text)

@@ -1,11 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 
-__all__ = ["StrModel"]
+__all__ = ["StrMixIn", "StrRoot", "StrRecord"]
 
 
-class StrModel(BaseModel):
+class StrMixIn:
     """
-    Base for a string-like model that can be compared, hashed, and indexed.
+    Base for a string-like class that can be compared, hashed, and indexed.
     """
 
     def __eq__(self, cmp) -> str:
@@ -25,3 +25,25 @@ class StrModel(BaseModel):
 
     def __gt__(self, cmp) -> bool:
         return self.__str__() > cmp
+
+
+class StrRoot(StrMixIn, RootModel):
+    """
+    A very string-like single field model that can be compared, hashed, and indexed.
+    By default its `__str__` representation is the value of its field.
+    """
+
+    root: str
+
+    def __str__(self) -> str:
+        return self.root
+
+
+class StrRecord(StrMixIn, BaseModel):
+    """
+    A fairly string-like model that can be compared, hashed, and indexed.
+    By default its `__str__` representation is the value of its first field.
+    """
+
+    def __str__(self) -> str:
+        return getattr(self, next(iter(self.model_fields)))

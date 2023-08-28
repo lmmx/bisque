@@ -170,7 +170,7 @@ class HTMLTreeBuilder(TreeBuilder):
             # HTML 5 style:
             # <meta charset="utf8">
             meta_encoding = charset
-            tag["charset"] = CharsetMetaAttributeValue(charset)
+            tag["charset"] = CharsetMetaAttributeValue(original_value=charset)
         elif (
             content is not None
             and http_equiv is not None
@@ -178,5 +178,5 @@ class HTMLTreeBuilder(TreeBuilder):
         ):
             # HTML 4 style:
             # <meta http-equiv="content-type" content="text/html; charset=utf8">
-            tag["content"] = ContentMetaAttributeValue(content)
+            tag["content"] = ContentMetaAttributeValue(original_value=content)
         return meta_encoding is not None

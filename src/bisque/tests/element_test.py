@@ -67,7 +67,7 @@ class TestAttributeValueWithCharsetSubstitution:
         assert "ascii" == value.encode("ascii")
 
     def test_content_meta_attribute_value(self):
-        value = ContentMetaAttributeValue("text/html; charset=euc-jp")
+        value = ContentMetaAttributeValue(original_value="text/html; charset=euc-jp")
         assert "text/html; charset=euc-jp" == value
         assert "text/html; charset=euc-jp" == value.original_value
         assert "text/html; charset=utf8" == value.encode("utf8")
