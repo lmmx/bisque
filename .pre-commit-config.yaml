@@ -8,7 +8,7 @@ default_install_hook_types:
 
 repos:
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v2.3.0
+    rev: v2.4.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
@@ -24,7 +24,7 @@ repos:
         exclude: ^tests/helpers/
       - id: requirements-txt-fixer
   - repo: https://github.com/pre-commit/mirrors-autopep8
-    rev: v2.0.2
+    rev: v2.0.4
     hooks:
       - id: autopep8
         args: ["--in-place", "--max-line-length=88", "--ignore=E203"]
