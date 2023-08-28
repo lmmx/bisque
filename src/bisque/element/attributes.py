@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import re
 
+from pydantic import Field
+
+from ..models import StrModel
 from .encodings import PYTHON_SPECIFIC_ENCODINGS
 
 __all__ = [
@@ -12,28 +15,21 @@ __all__ = [
 ]
 
 
-class NamespacedAttribute(str):
+class NamespacedAttribute(StrModel):
     """A namespaced string (e.g. 'xml:lang') that remembers the namespace
     ('xml') and the name ('lang') that were used to create it.
     """
 
-    def __new__(cls, prefix, name=None, namespace=None):
-        if not name:
-            # This is the default namespace. Its name "has no value"
-            # per https://www.w3.org/TR/xml-names/#defaulting
-            name = None
+    prefix: str | None
+    name: str | None = Field(
+        None,
+        description="""This is the default namespace. Its name "has no value"
+                       per https://www.w3.org/TR/xml-names/#defaulting""",
+    )
+    namespace: str | None = None
 
-        if not name:
-            obj = str.__new__(cls, prefix)
-        elif not prefix:
-            # Not really namespaced.
-            obj = str.__new__(cls, name)
-        else:
-            obj = str.__new__(cls, prefix + ":" + name)
-        obj.prefix = prefix
-        obj.name = name
-        obj.namespace = namespace
-        return obj
+    def __str__(self) -> str:
+        return ":".join(filter(None, [self.prefix, self.name]))
 
 
 class AttributeValueWithCharsetSubstitution(str):

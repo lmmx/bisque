@@ -259,9 +259,9 @@ class LXMLTreeBuilderForXML(TreeBuilder):
             attrs = attrs.copy()
             for prefix, namespace in list(nsmap.items()):
                 attribute = NamespacedAttribute(
-                    "xmlns",
-                    prefix,
-                    "http://www.w3.org/2000/xmlns/",
+                    prefix="xmlns",
+                    name=prefix,
+                    namespace="http://www.w3.org/2000/xmlns/",
                 )
                 attrs[attribute] = namespace
         # Namespaces are in play. Find any attributes that came in
@@ -274,7 +274,11 @@ class LXMLTreeBuilderForXML(TreeBuilder):
                 new_attrs[attr] = value
             else:
                 nsprefix = self._prefix_for_namespace(namespace)
-                attr = NamespacedAttribute(nsprefix, attr, namespace)
+                attr = NamespacedAttribute(
+                    prefix=nsprefix,
+                    name=attr,
+                    namespace=namespace,
+                )
                 new_attrs[attr] = value
         attrs = new_attrs
         namespace, name = self._getNsTag(name)

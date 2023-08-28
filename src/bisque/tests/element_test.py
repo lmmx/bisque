@@ -15,40 +15,40 @@ from . import SoupTest
 
 class TestNamedspacedAttribute:
     def test_name_may_be_none_or_missing(self):
-        a = NamespacedAttribute("xmlns", None)
+        a = NamespacedAttribute(prefix="xmlns", name=None)
         assert a == "xmlns"
 
-        a = NamespacedAttribute("xmlns", "")
+        a = NamespacedAttribute(prefix="xmlns", name="")
         assert a == "xmlns"
 
-        a = NamespacedAttribute("xmlns")
+        a = NamespacedAttribute(prefix="xmlns")
         assert a == "xmlns"
 
     def test_namespace_may_be_none_or_missing(self):
-        a = NamespacedAttribute(None, "tag")
+        a = NamespacedAttribute(prefix=None, name="tag")
         assert a == "tag"
 
-        a = NamespacedAttribute("", "tag")
+        a = NamespacedAttribute(prefix="", name="tag")
         assert a == "tag"
 
     def test_attribute_is_equivalent_to_colon_separated_string(self):
-        a = NamespacedAttribute("a", "b")
+        a = NamespacedAttribute(prefix="a", name="b")
         assert "a:b" == a
 
     def test_attributes_are_equivalent_if_prefix_and_name_identical(self):
-        a = NamespacedAttribute("a", "b", "c")
-        b = NamespacedAttribute("a", "b", "c")
+        a = NamespacedAttribute(prefix="a", name="b", namespace="c")
+        b = NamespacedAttribute(prefix="a", name="b", namespace="c")
         assert a == b
 
         # The actual namespace is not considered.
-        c = NamespacedAttribute("a", "b", None)
+        c = NamespacedAttribute(prefix="a", name="b", namespace=None)
         assert a == c
 
         # But name and prefix are important.
-        d = NamespacedAttribute("a", "z", "c")
+        d = NamespacedAttribute(prefix="a", name="z", namespace="c")
         assert a != d
 
-        e = NamespacedAttribute("z", "b", "c")
+        e = NamespacedAttribute(prefix="z", name="b", namespace="c")
         assert a != e
 
 
