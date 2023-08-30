@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
+from typing import ClassVar
 
 from bisque.formatter import Formatter, HTMLFormatter, XMLFormatter
 
@@ -15,6 +17,8 @@ class PageElementBase:
 
     NavigableString, Tag, etc. are all subclasses of PageElement.
     """
+
+    TYPE_TABLE: ClassVar[type]
 
     # In general, we can't tell just by looking at an element whether
     # it's contained in an XML document or an HTML document. But for
@@ -264,12 +268,194 @@ class PageElementBase:
         self.previous_sibling = self.next_sibling = None
         return self
 
+    def _last_descendant(self, is_initialized=True, accept_self=True):
+        """Finds the last element beneath this object to be parsed.
+
+        :param is_initialized: Has `setup` been called on this PageElement
+            yet?
+        :param accept_self: Is `self` an acceptable answer to the question?
+        """
+        if is_initialized and self.next_sibling is not None:
+            last_child = self.next_sibling.previous_element
+        else:
+            last_child = self
+            while isinstance(last_child, self.TYPE_TABLE.Tag) and last_child.contents:
+                last_child = last_child.contents[-1]
+        if not accept_self and last_child is self:
+            last_child = None
+        return last_child
+
+    def insert(self, position, new_child):
+        """Insert a new PageElement in the list of this PageElement's children.
+
+        This works the same way as `list.insert`.
+
+        :param position: The numeric position that should be occupied
+           in `self.children` by the new PageElement.
+        :param new_child: A PageElement.
+        """
+        if new_child is None:
+            raise ValueError("Cannot insert None into a tag.")
+        if new_child is self:
+            raise ValueError("Cannot insert a tag into itself.")
+        if isinstance(new_child, str) and not isinstance(
+            new_child,
+            self.TYPE_TABLE.NavigableString,
+        ):
+            new_child = self.TYPE_TABLE.NavigableString(new_child)
+
+        from bisque import Bisque
+
+        if isinstance(new_child, Bisque):
+            # We don't want to end up with a situation where one Bisque
+            # object contains another. Insert the children one at a time.
+            for subchild in list(new_child.contents):
+                self.insert(position, subchild)
+                position += 1
+            return
+        position = min(position, len(self.contents))
+        if hasattr(new_child, "parent") and new_child.parent is not None:
+            # We're 'inserting' an element that's already one
+            # of this object's children.
+            if new_child.parent is self:
+                current_index = self.index(new_child)
+                if current_index < position:
+                    # We're moving this element further down the list
+                    # of this object's children. That means that when
+                    # we extract this element, our target index will
+                    # jump down one.
+                    position -= 1
+            new_child.extract()
+
+        new_child.parent = self
+        previous_child = None
+        if position == 0:
+            new_child.previous_sibling = None
+            new_child.previous_element = self
+        else:
+            previous_child = self.contents[position - 1]
+            new_child.previous_sibling = previous_child
+            new_child.previous_sibling.next_sibling = new_child
+            new_child.previous_element = previous_child._last_descendant(False)
+        if new_child.previous_element is not None:
+            new_child.previous_element.next_element = new_child
+
+        new_childs_last_element = new_child._last_descendant(False)
+
+        if position >= len(self.contents):
+            new_child.next_sibling = None
+
+            parent = self
+            parents_next_sibling = None
+            while parents_next_sibling is None and parent is not None:
+                parents_next_sibling = parent.next_sibling
+                parent = parent.parent
+                if parents_next_sibling is not None:
+                    # We found the element that comes next in the document.
+                    break
+            if parents_next_sibling is not None:
+                new_childs_last_element.next_element = parents_next_sibling
+            else:
+                # The last element of this tag is the last element in
+                # the document.
+                new_childs_last_element.next_element = None
+        else:
+            next_child = self.contents[position]
+            new_child.next_sibling = next_child
+            if new_child.next_sibling is not None:
+                new_child.next_sibling.previous_sibling = new_child
+            new_childs_last_element.next_element = next_child
+
+        if new_childs_last_element.next_element is not None:
+            new_childs_last_element.next_element.previous_element = (
+                new_childs_last_element
+            )
+        self.contents.insert(position, new_child)
+
     def append(self, tag):
         """Appends the given PageElement to the contents of this one.
 
         :param tag: A PageElement.
         """
         self.insert(len(self.contents), tag)
+
+    def extend(self, tags):
+        """Appends the given PageElements to this one's contents.
+
+        :param tags: A list of PageElements. If a single Tag is
+            provided instead, this PageElement's contents will be extended
+            with that Tag's contents.
+        """
+        if isinstance(tags, self.TYPE_TABLE.Tag):
+            tags = tags.contents
+        if isinstance(tags, list):
+            # Moving items around the tree may change their position in
+            # the original list. Make a list that won't change.
+            tags = list(tags)
+        for tag in tags:
+            self.append(tag)
+
+    def insert_before(self, *args):
+        """Makes the given element(s) the immediate predecessor of this one.
+
+        All the elements will have the same parent, and the given elements
+        will be immediately before this one.
+
+        :param args: One or more PageElements.
+        """
+        parent = self.parent
+        if parent is None:
+            raise ValueError("Element has no parent, so 'before' has no meaning.")
+        if any(x is self for x in args):
+            raise ValueError("Can't insert an element before itself.")
+        for predecessor in args:
+            # Extract first so that the index won't be screwed up if they
+            # are siblings.
+            if isinstance(predecessor, self.TYPE_TABLE.PageElement):
+                predecessor.extract()
+            index = parent.index(self)
+            parent.insert(index, predecessor)
+
+    def insert_after(self, *args):
+        """Makes the given element(s) the immediate successor of this one.
+
+        The elements will have the same parent, and the given elements
+        will be immediately after this one.
+
+        :param args: One or more PageElements.
+        """
+        # Do all error checking before modifying the tree.
+        parent = self.parent
+        if parent is None:
+            raise ValueError("Element has no parent, so 'after' has no meaning.")
+        if any(x is self for x in args):
+            raise ValueError("Can't insert an element after itself.")
+
+        offset = 0
+        for successor in args:
+            # Extract first so that the index won't be screwed up if they
+            # are siblings.
+            if isinstance(successor, self.TYPE_TABLE.PageElement):
+                successor.extract()
+            index = parent.index(self)
+            parent.insert(index + 1 + offset, successor)
+            offset += 1
+
+    def find_next(self, name=None, attrs={}, string=None, **kwargs):
+        """Find the first PageElement that matches the given criteria and
+        appears later in the document than this PageElement.
+
+        All find_* methods take a common set of arguments. See the online
+        documentation for detailed explanations.
+
+        :param name: A filter on tag name.
+        :param attrs: A dictionary of filters on attribute values.
+        :param string: A filter for a NavigableString with specific text.
+        :kwargs: A dictionary of filters on attribute values.
+        :return: A PageElement.
+        :rtype: bisque.element.Tag | bisque.element.NavigableString
+        """
+        return self._find_one(self.find_all_next, name, attrs, string, **kwargs)
 
     def find_all_next(self, name=None, attrs={}, string=None, limit=None, **kwargs):
         """Find all PageElements that match the given criteria and appear
@@ -311,6 +497,39 @@ class PageElementBase:
         :rtype: bisque.element.Tag | bisque.element.NavigableString
         """
         return self._find_one(self.find_next_siblings, name, attrs, string, **kwargs)
+
+    def find_next_siblings(
+        self,
+        name=None,
+        attrs={},
+        string=None,
+        limit=None,
+        **kwargs,
+    ) -> TYPE_TABLE.ResultSet:
+        """Find all siblings of this PageElement that match the given criteria
+        and appear later in the document.
+
+        All find_* methods take a common set of arguments. See the online
+        documentation for detailed explanations.
+
+        :param name: A filter on tag name.
+        :param attrs: A dictionary of filters on attribute values.
+        :param string: A filter for a NavigableString with specific text.
+        :param limit: Stop looking after finding this many results.
+        :kwargs: A dictionary of filters on attribute values.
+        :return: A ResultSet of PageElements.
+        :rtype: bisque.element.ResultSet
+        """
+        _stacklevel = kwargs.pop("_stacklevel", 2)
+        return self._find_all(
+            name,
+            attrs,
+            string,
+            limit,
+            self.next_siblings,
+            _stacklevel=_stacklevel + 1,
+            **kwargs,
+        )
 
     def find_previous(self, name=None, attrs={}, string=None, **kwargs):
         """Look backwards in the document from this PageElement and find the
@@ -478,6 +697,75 @@ class PageElementBase:
         results = method(name, attrs, string, 1, _stacklevel=4, **kwargs)
         element = results[0] if results else None
         return element
+
+    def _find_all(
+        self,
+        name,
+        attrs,
+        string,
+        limit,
+        generator,
+        **kwargs,
+    ) -> TYPE_TABLE.ResultSet:
+        "Iterates over a generator looking for things that match."
+        _stacklevel = kwargs.pop("_stacklevel", 3)
+
+        if string is None and "text" in kwargs:
+            string = kwargs.pop("text")
+            warnings.warn(
+                "The 'text' argument to find()-type methods is deprecated. Use 'string' instead.",
+                DeprecationWarning,
+                stacklevel=_stacklevel,
+            )
+
+        if isinstance(name, self.TYPE_TABLE.SoupStrainer):
+            strainer = name
+        else:
+            strainer = self.TYPE_TABLE.SoupStrainer(name, attrs, string, **kwargs)
+
+        if string is None and not limit and not attrs and not kwargs:
+            if name is True or name is None:
+                # Optimization to find all tags.
+                result = (
+                    element
+                    for element in generator
+                    if isinstance(element, self.TYPE_TABLE.Tag)
+                )
+                return self.TYPE_TABLE.ResultSet(strainer, result)
+            elif isinstance(name, str):
+                # Optimization to find all tags with a given name.
+                if name.count(":") == 1:
+                    # This is a name with a prefix. If this is a namespace-aware document,
+                    # we need to match the local name against tag.name. If not,
+                    # we need to match the fully-qualified name against tag.name.
+                    prefix, local_name = name.split(":", 1)
+                else:
+                    prefix = None
+                    local_name = name
+                result = (
+                    element
+                    for element in generator
+                    if isinstance(element, self.TYPE_TABLE.Tag)
+                    and (element.name == name)
+                    or (
+                        element.name == local_name
+                        and (prefix is None or element.prefix == prefix)
+                    )
+                )
+                return self.TYPE_TABLE.ResultSet(strainer, result)
+        results = self.TYPE_TABLE.ResultSet(strainer)
+        while True:
+            try:
+                i = next(generator)
+            except StopIteration:
+                break
+            if i:
+                found = strainer.search(i)
+                if found:
+                    results.append(found)
+                    if limit and len(results) >= limit:
+                        break
+        return results
 
     # These generators can be used to navigate starting from both
     # NavigableStrings and Tags.
