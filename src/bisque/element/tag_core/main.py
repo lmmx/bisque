@@ -12,12 +12,12 @@ from .soup_strainer import SoupStrainerBase
 from .tag import TagBase
 
 __all__ = [
-    # Section 0
+    # Section 0: central type registration
     "TYPE_TABLE",
     "TabulatedType",
-    # Section 1
+    # Section 1: base element type
     "PageElement",
-    # Section 2
+    # Section 2: string types
     "NavigableString",
     "PreformattedString",
     "CData",
@@ -31,9 +31,9 @@ __all__ = [
     "TemplateString",
     "RubyTextString",
     "RubyParenthesisString",
-    # Section 3
+    # Section 3: base tag type
     "Tag",
-    # Section 4
+    # Section 4: tree search helper types
     "SoupStrainer",
     "ResultSet",
 ]
