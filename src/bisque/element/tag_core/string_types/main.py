@@ -45,7 +45,7 @@ class BaseNavigableString(StrRecord):
     PREFIX: str = ""
     SUFFIX: str = ""
 
-    def __init__(self, value: str) -> None:
+    def __init__(self, value: str, **kwargs) -> None:
         super().__init__(value=value)
         self.setup()
 
@@ -57,13 +57,13 @@ class BaseNavigableString(StrRecord):
            so that NavigableString.__deepcopy__ implements the same
            signature as Tag.__deepcopy__.
         """
-        return self.model_validate(**self.model_dump())
+        return self.model_validate(self.model_dump())
 
     def __copy__(self):
         """A copy of a NavigableString can only be a deep copy, because
         only one PageElement can occupy a given place in a parse tree.
         """
-        return self.__deepcopy__()
+        return self.__deepcopy__({})
 
     def __getnewargs__(self):
         return (str(self),)
