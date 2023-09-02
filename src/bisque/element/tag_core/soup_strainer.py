@@ -3,10 +3,10 @@ from __future__ import annotations
 import warnings
 from collections.abc import Callable
 
-__all__ = ["SoupStrainerBase"]
+__all__ = ["BaseSoupStrainer"]
 
 
-class SoupStrainerBase:
+class BaseSoupStrainer:
     """Encapsulates a number of ways of matching a markup element (tag or
     string).
 

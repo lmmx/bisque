@@ -2,7 +2,7 @@ import sys
 
 from pydantic import BaseModel
 
-__all__ = ["TypeTableBase", "EmptyTypeTableError", "MissingClassVarError"]
+__all__ = ["BaseTypeTable", "EmptyTypeTableError", "MissingClassVarError"]
 
 
 class EmptyTypeTableError(TypeError):
@@ -22,7 +22,7 @@ class MissingClassVarError(TypeError):
         )
 
 
-class TypeTableBase(BaseModel):
+class BaseTypeTable(BaseModel):
     """
     Provides a helper method that will populate the model that inherits from this class.
     See https://github.com/lmmx/interface-separation-example for full details.

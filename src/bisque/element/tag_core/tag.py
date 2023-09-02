@@ -7,10 +7,10 @@ from bisque.css import CSS
 from ..attributes import AttributeValueWithCharsetSubstitution
 from ..encodings import DEFAULT_OUTPUT_ENCODING
 
-__all__ = ["TagBase"]
+__all__ = ["BaseTag"]
 
 
-class TagBase:
+class BaseTag:
     """Standalone methods and attributes for Tag.
 
     Represents an HTML or XML tag that is part of a parse tree, along

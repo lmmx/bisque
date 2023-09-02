@@ -1,3 +1,3 @@
-from .tabulation import TypeTableBase
+from .tabulation import BaseTypeTable
 
-__all__ = ["TypeTableBase"]
+__all__ = ["BaseTypeTable"]

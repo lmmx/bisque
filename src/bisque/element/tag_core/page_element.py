@@ -6,10 +6,10 @@ from typing import ClassVar
 
 from bisque.formatter import Formatter, HTMLFormatter, XMLFormatter
 
-__all__ = ["PageElementBase"]
+__all__ = ["BasePageElement"]
 
 
-class PageElementBase:
+class BasePageElement:
     """Standalone methods and attributes for PageElement.
 
     Contains the navigational information for some part of the page:

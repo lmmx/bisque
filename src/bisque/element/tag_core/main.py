@@ -5,11 +5,11 @@ from typing import ClassVar
 
 from bisque.formatter import Formatter
 
-from ...typing.tabulation import TypeTableBase
+from ...typing.tabulation import BaseTypeTable
 from ..encodings import DEFAULT_OUTPUT_ENCODING
-from .page_element import PageElementBase
-from .soup_strainer import SoupStrainerBase
-from .tag import TagBase
+from .page_element import BasePageElement
+from .soup_strainer import BaseSoupStrainer
+from .tag import BaseTag
 
 __all__ = [
     # Section 0: central type registration
@@ -39,7 +39,7 @@ __all__ = [
 ]
 
 
-class TYPE_TABLE(TypeTableBase):
+class TYPE_TABLE(BaseTypeTable):
     # Section 1
     PageElement: ClassVar[type[PageElement]]  # Tabulated
     # Section 2
@@ -70,7 +70,7 @@ class TabulatedType:
 # Section 1: PageElement (1 class)
 
 
-class PageElement(PageElementBase, TabulatedType):
+class PageElement(BasePageElement, TabulatedType):
     """Contains the navigational information for some part of the page:
     that is, its current location in the parse tree.
 
@@ -352,10 +352,10 @@ class RubyParenthesisString(NavigableString, TabulatedType):
 # Section 3: Tag (1 class)
 
 
-class Tag(TagBase, PageElement, TabulatedType):
+class Tag(BaseTag, PageElement, TabulatedType):
     """Methods and attributes for Tag which are inseparable from the
     definitions of other classes in `bisque.element.tag_core.main`. Standalone methods
-    are provided by inheritance from `bisque.element.tag_core.tag.TagBase`.
+    are provided by inheritance from `bisque.element.tag_core.tag.BaseTag`.
 
     Represents an HTML or XML tag that is part of a parse tree, along
     with its attributes and contents.
@@ -690,7 +690,7 @@ class Tag(TagBase, PageElement, TabulatedType):
 # Section 4 (1 class)
 
 
-class SoupStrainer(SoupStrainerBase, TabulatedType):
+class SoupStrainer(BaseSoupStrainer, TabulatedType):
     def search_tag(self, markup_name=None, markup_attrs={}):
         """Check whether a Tag with the given name and attributes would
         match this SoupStrainer.
