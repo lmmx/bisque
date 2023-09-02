@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import ClassVar
+from typing import ClassVar, Iterator
 
 from bisque.formatter import Formatter
 
@@ -259,7 +259,7 @@ class Tag(BaseTag, PageElement, TabulatedType):
 
     DEFAULT_INTERESTING_STRING_TYPES = (NavigableString, CData)
 
-    def _all_strings(self, strip=False, types=DEFAULT_TYPES_SENTINEL):
+    def _all_strings(self, strip=False, types=DEFAULT_TYPES_SENTINEL) -> Iterator[str]:
         """Yield all strings of certain classes, possibly stripping them.
 
         :param strip: If True, all strings will be stripped before being
@@ -290,11 +290,12 @@ class Tag(BaseTag, PageElement, TabulatedType):
             elif types is not None and descendant_type not in types:
                 # We're not interested in strings of this type.
                 continue
+            value = str(descendant)
             if strip:
-                descendant = descendant.strip()
-                if len(descendant) == 0:
+                value = value.strip()
+                if len(value) == 0:
                     continue
-            yield descendant
+            yield value
 
     strings = property(_all_strings)
 
