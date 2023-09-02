@@ -6,6 +6,8 @@ from typing import ClassVar
 
 from bisque.formatter import Formatter, HTMLFormatter, XMLFormatter
 
+from ..sentinels import DEFAULT_TYPES_SENTINEL
+
 __all__ = ["BasePageElement"]
 
 
@@ -131,9 +133,9 @@ class BasePageElement:
             return getattr(self, "is_xml", False)
         return self.parent._is_xml
 
-    default = object()
+    default = DEFAULT_TYPES_SENTINEL
 
-    def _all_strings(self, strip=False, types=default):
+    def _all_strings(self, strip=False, types=DEFAULT_TYPES_SENTINEL):
         """Yield all strings of certain classes, possibly stripping them.
 
         This is implemented differently in Tag and NavigableString.
@@ -148,7 +150,7 @@ class BasePageElement:
         """
         yield from self._all_strings(True)
 
-    def get_text(self, separator="", strip=False, types=default):
+    def get_text(self, separator="", strip=False, types=DEFAULT_TYPES_SENTINEL):
         """Get all child strings of this PageElement, concatenated using the
         given separator.
 
