@@ -5,7 +5,7 @@ from typing import ClassVar, Iterator
 
 from bisque.formatter import Formatter
 
-from ...models import StrTypes
+from ...models import StrMixIn, StrTypes
 from ...typing.tabulation import BaseTypeTable
 from ..encodings import DEFAULT_OUTPUT_ENCODING
 from ..sentinels import DEFAULT_TYPES_SENTINEL
@@ -697,7 +697,8 @@ class SoupStrainer(BaseSoupStrainer, TabulatedType):
 
         if not match and hasattr(match_against, "search"):
             # Regexp match
-            return match_against.search(markup)
+            is_model = isinstance(markup, StrMixIn)
+            return match_against.search(str(markup) if is_model else markup)
 
         if not match and isinstance(original_markup, Tag) and original_markup.prefix:
             # Try the whole thing again with the prefixed tag name.
