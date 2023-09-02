@@ -1,8 +1,8 @@
-from typing import Any
+from typing import Any, Iterator
 
 from pydantic import BaseModel, RootModel
 
-__all__ = ["Element", "StrMixIn", "StrRoot", "StrRecord"]
+__all__ = ["Element", "StrMixIn", "StrTypes", "StrRoot", "StrRecord"]
 
 Element = Any  # TODO: annotate it properly as forward ref to TypeVar(bound=PageElement)
 # Perhaps possible once I also extract the pre-setup type table into 1 place?
@@ -30,6 +30,15 @@ class StrMixIn:
 
     def __gt__(self, cmp) -> bool:
         return self.__str__() > cmp
+
+    def __add__(self, cmp) -> str:
+        return self.__str__() + (cmp if isinstance(cmp, str) else cmp.__str__())
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.__str__())
+
+
+StrTypes = (str, StrMixIn)  # to replace in `isinstance(str)` checks
 
 
 class StrRoot(StrMixIn, RootModel):

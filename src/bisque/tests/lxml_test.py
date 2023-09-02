@@ -54,7 +54,7 @@ class TestLXMLTreeBuilder(SoupTest, HTMLTreeBuilderSmokeTest):
     def test_empty_doctype(self):
         soup = self.soup("<!DOCTYPE>")
         doctype = soup.contents[0]
-        assert "" == doctype.strip()
+        assert "" == str(doctype).strip()
 
     def test_xml_parser(self):
         soup = Bisque("<b />", features="xml")

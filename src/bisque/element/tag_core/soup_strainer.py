@@ -3,6 +3,8 @@ from __future__ import annotations
 import warnings
 from collections.abc import Callable
 
+from bisque.models import StrTypes
+
 __all__ = ["BaseSoupStrainer"]
 
 
@@ -69,7 +71,7 @@ class BaseSoupStrainer:
         # Leave it alone if it's a Unicode string, a callable, a
         # regular expression, a boolean, or None.
         if (
-            isinstance(value, str)
+            isinstance(value, StrTypes)
             or isinstance(value, Callable)
             or hasattr(value, "match")
             or isinstance(value, bool)
@@ -88,7 +90,7 @@ class BaseSoupStrainer:
                 if (
                     hasattr(v, "__iter__")
                     and not isinstance(v, bytes)
-                    and not isinstance(v, str)
+                    and not isinstance(v, StrTypes)
                 ):
                     # This is almost certainly the user's mistake. In the
                     # interests of avoiding infinite loops, we'll let

@@ -6,6 +6,7 @@ from bisque.builder.core.features import HTML, HTML_5, PERMISSIVE
 from bisque.builder.core.html_builder import HTMLTreeBuilder
 from bisque.builder.core.parser_names import HTML5LIB
 from bisque.builder.core.xml import DetectsXMLParsedAsHTML
+from bisque.models import StrTypes
 
 from .main import TreeBuilderForHtml5lib
 
@@ -69,18 +70,18 @@ class HTML5TreeBuilder(HTMLTreeBuilder):
         parser = html5lib.HTMLParser(tree=self.create_treebuilder)
         self.underlying_builder.parser = parser
         extra_kwargs = dict()
-        if not isinstance(markup, str):
+        if not isinstance(markup, StrTypes):
             extra_kwargs["override_encoding"] = self.user_specified_encoding
         doc = parser.parse(markup, **extra_kwargs)
 
         # Set the character encoding detected by the tokenizer.
-        if isinstance(markup, str):
+        if isinstance(markup, StrTypes):
             # We need to special-case this because html5lib sets
             # charEncoding to UTF-8 if it gets Unicode input.
             doc.original_encoding = None
         else:
             original_encoding = parser.tokenizer.stream.charEncoding[0]
-            if not isinstance(original_encoding, str):
+            if not isinstance(original_encoding, StrTypes):
                 # In 0.99999999 and up, the encoding is an html5lib
                 # Encoding object. We want to use a string for compatibility
                 # with other tree builders.

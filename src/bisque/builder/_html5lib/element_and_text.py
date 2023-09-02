@@ -2,6 +2,7 @@ from html5lib.constants import namespaces
 from html5lib.treebuilders import base as treebuilder_base
 
 from bisque.element import Comment, NamespacedAttribute, NavigableString, Tag
+from bisque.models import StrTypes
 
 from .attrs import AttrList
 
@@ -17,7 +18,7 @@ class Element(treebuilder_base.Node):
 
     def appendChild(self, node):
         string_child = child = None
-        if isinstance(node, str):
+        if isinstance(node, StrTypes):
             # Some other piece of code decided to pass in a string
             # instead of creating a TextElement object to contain the
             # string.
@@ -34,7 +35,7 @@ class Element(treebuilder_base.Node):
             child = node.element
             node.parent = self
 
-        if not isinstance(child, str) and child.parent is not None:
+        if not isinstance(child, StrTypes) and child.parent is not None:
             node.element.extract()
 
         if (
@@ -50,7 +51,7 @@ class Element(treebuilder_base.Node):
             old_element.replace_with(new_element)
             self.soup._most_recent_element = new_element
         else:
-            if isinstance(node, str):
+            if isinstance(node, StrTypes):
                 # Create a brand new NavigableString from this string.
                 child = self.soup.new_string(node)
 

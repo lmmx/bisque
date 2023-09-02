@@ -5,6 +5,7 @@ from typing import ClassVar, Iterator
 
 from bisque.formatter import Formatter
 
+from ...models import StrTypes
 from ...typing.tabulation import BaseTypeTable
 from ..encodings import DEFAULT_OUTPUT_ENCODING
 from ..sentinels import DEFAULT_TYPES_SENTINEL
@@ -607,7 +608,7 @@ class SoupStrainer(BaseSoupStrainer, TabulatedType):
         found = None
         # If given a list of items, scan it for a text element that
         # matches.
-        if hasattr(markup, "__iter__") and not isinstance(markup, (Tag, str)):
+        if hasattr(markup, "__iter__") and not isinstance(markup, (Tag, StrTypes)):
             for element in markup:
                 if isinstance(element, NavigableString) and self.search(element):
                     found = element
@@ -618,7 +619,7 @@ class SoupStrainer(BaseSoupStrainer, TabulatedType):
             if not self.string or self.name or self.attrs:
                 found = self.search_tag(markup)
         # If it's text, make sure the text matches.
-        elif isinstance(markup, NavigableString) or isinstance(markup, str):
+        elif isinstance(markup, NavigableString) or isinstance(markup, StrTypes):
             if not self.name and not self.attrs and self._matches(markup, self.string):
                 found = markup
         else:
@@ -660,7 +661,10 @@ class SoupStrainer(BaseSoupStrainer, TabulatedType):
             # None matches None, False, an empty string, an empty list, and so on.
             return not match_against
 
-        if hasattr(match_against, "__iter__") and not isinstance(match_against, str):
+        if hasattr(match_against, "__iter__") and not isinstance(
+            match_against,
+            StrTypes,
+        ):
             # We're asked to match against an iterable of items.
             # The markup must be match at least one item in the
             # iterable. We'll try each one in turn.
@@ -687,7 +691,7 @@ class SoupStrainer(BaseSoupStrainer, TabulatedType):
         # the tag's name and once against its prefixed name.
         match = False
 
-        if not match and isinstance(match_against, str):
+        if not match and isinstance(match_against, StrTypes):
             # Exact string match
             match = markup == match_against
 

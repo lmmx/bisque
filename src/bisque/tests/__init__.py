@@ -432,7 +432,7 @@ class HTMLTreeBuilderSmokeTest(TreeBuilderSmokeTest):
     def test_empty_doctype(self):
         soup = self.soup("<!DOCTYPE>")
         doctype = soup.contents[0]
-        assert "" == doctype.strip()
+        assert "" == str(doctype).strip()
 
     def test_mixed_case_doctype(self):
         # A lowercase or mixed-case doctype becomes a Doctype.

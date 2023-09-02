@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Iterator
 
+from pydantic import Field
+
 from ....models import Element, StrRecord
 from ...sentinels import DEFAULT_TYPES_SENTINEL
 
@@ -34,11 +36,11 @@ class BaseNavigableString(StrRecord):
 
     value: str
 
-    parent: Element | None = None
-    previous_element: Element | None = None
-    next_element: Element | None = None
-    previous_sibling: Element | None = None
-    next_sibling: Element | None = None
+    parent: Element | None = Field(None, repr=False)
+    previous_element: Element | None = Field(None, repr=False)
+    next_element: Element | None = Field(None, repr=False)
+    previous_sibling: Element | None = Field(None, repr=False)
+    next_sibling: Element | None = Field(None, repr=False)
 
     PREFIX: str = ""
     SUFFIX: str = ""
@@ -46,21 +48,6 @@ class BaseNavigableString(StrRecord):
     def __init__(self, value: str) -> None:
         super().__init__(value=value)
         self.setup()
-
-    # def __new__(cls, value):
-    #     """Create a new NavigableString.
-
-    #     When unpickling a NavigableString, this method is called with
-    #     the string in DEFAULT_OUTPUT_ENCODING. That encoding needs to be
-    #     passed in to the superclass's __new__ or the superclass won't know
-    #     how to handle non-ASCII characters.
-    #     """
-    #     if isinstance(value, str):
-    #         u = str.__new__(cls, value)
-    #     else:
-    #         u = str.__new__(cls, value, DEFAULT_OUTPUT_ENCODING)
-    #     u.setup()  # This sets all the defaults to None: TODO do this explicitly
-    #     return u
 
     def __deepcopy__(self, memo, recursive=False):
         """A copy of a NavigableString has the same contents and class
