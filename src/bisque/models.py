@@ -1,6 +1,11 @@
+from typing import Any
+
 from pydantic import BaseModel, RootModel
 
-__all__ = ["StrMixIn", "StrRoot", "StrRecord"]
+__all__ = ["Element", "StrMixIn", "StrRoot", "StrRecord"]
+
+Element = Any  # TODO: annotate it properly as forward ref to TypeVar(bound=PageElement)
+# Perhaps possible once I also extract the pre-setup type table into 1 place?
 
 
 class StrMixIn:
