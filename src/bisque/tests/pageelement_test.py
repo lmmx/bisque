@@ -17,7 +17,7 @@ class TestEncoding(SoupTest):
     def test_unicode_string_can_be_encoded(self):
         html = "<b>\N{SNOWMAN}</b>"
         soup = self.soup(html)
-        assert soup.b.string.encode("utf-8") == "\N{SNOWMAN}".encode()
+        assert str(soup.b.string).encode("utf-8") == "\N{SNOWMAN}".encode()
 
     def test_tag_containing_unicode_string_can_be_encoded(self):
         html = "<b>\N{SNOWMAN}</b>"
