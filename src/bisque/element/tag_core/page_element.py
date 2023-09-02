@@ -148,7 +148,7 @@ class BasePageElement:
 
         :yield: A sequence of stripped strings.
         """
-        yield from self._all_strings(True)
+        yield from self._all_strings(strip=True)
 
     def get_text(self, separator="", strip=False, types=DEFAULT_TYPES_SENTINEL):
         """Get all child strings of this PageElement, concatenated using the
@@ -168,7 +168,7 @@ class BasePageElement:
 
         :return: A string.
         """
-        return separator.join([s for s in self._all_strings(strip, types=types)])
+        return separator.join([s for s in self._all_strings(strip=strip, types=types)])
 
     getText = get_text
     text = property(get_text)
