@@ -31,8 +31,10 @@ class BaseNavigableString(str):
     create a NavigableString for the string "penguin".
     """
 
-    PREFIX = ""
-    SUFFIX = ""
+    value: str
+
+    PREFIX: str = ""
+    SUFFIX: str = ""
 
     def __new__(cls, value):
         """Create a new NavigableString.
@@ -46,7 +48,7 @@ class BaseNavigableString(str):
             u = str.__new__(cls, value)
         else:
             u = str.__new__(cls, value, DEFAULT_OUTPUT_ENCODING)
-        u.setup()
+        u.setup()  # This sets all the defaults to None: TODO do this explicitly
         return u
 
     def __deepcopy__(self, memo, recursive=False):
@@ -162,8 +164,8 @@ class BasePreformattedString:
     class).
     """
 
-    PREFIX = ""
-    SUFFIX = ""
+    PREFIX: str = ""
+    SUFFIX: str = ""
 
     def output_ready(self, formatter=None):
         """Make this string ready for output by adding any subclass-specific
@@ -186,40 +188,43 @@ class BasePreformattedString:
 class BaseCData:
     """A CDATA block."""
 
-    PREFIX = "<![CDATA["
-    SUFFIX = "]]>"
+    PREFIX: str = "<![CDATA["
+    SUFFIX: str = "]]>"
 
 
 class BaseProcessingInstruction:
     """A SGML processing instruction."""
 
-    PREFIX = "<?"
-    SUFFIX = ">"
+    PREFIX: str = "<?"
+    SUFFIX: str = ">"
 
 
 class BaseXMLProcessingInstruction:
     """An XML processing instruction."""
 
-    PREFIX = "<?"
-    SUFFIX = "?>"
+    PREFIX: str = "<?"
+    SUFFIX: str = "?>"
 
 
 class BaseComment:
     """An HTML or XML comment."""
 
-    PREFIX = "<!--"
-    SUFFIX = "-->"
+    PREFIX: str = "<!--"
+    SUFFIX: str = "-->"
 
 
 class BaseDeclaration:
     """An XML declaration."""
 
-    PREFIX = "<?"
-    SUFFIX = "?>"
+    PREFIX: str = "<?"
+    SUFFIX: str = "?>"
 
 
 class BaseDoctype:
     """A document type declaration."""
+
+    PREFIX: str = "<!DOCTYPE "
+    SUFFIX: str = ">\n"
 
     @classmethod
     def for_name_and_ids(cls, name, pub_id, system_id):
@@ -243,9 +248,6 @@ class BaseDoctype:
             value += ' SYSTEM "%s"' % system_id
 
         return cls.TYPE_TABLE.Doctype(value)
-
-    PREFIX = "<!DOCTYPE "
-    SUFFIX = ">\n"
 
 
 class BaseStylesheet:
