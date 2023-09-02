@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from ...encodings import DEFAULT_OUTPUT_ENCODING
+from typing import Iterator
+
+from ....models import Element, StrRecord
 from ...sentinels import DEFAULT_TYPES_SENTINEL
 
 __all__ = [
@@ -20,11 +22,10 @@ __all__ = [
     "BaseRubyParenthesisString",
 ]
 
-
 # Section 2: Text strings (13 classes)
 
 
-class BaseNavigableString(str):
+class BaseNavigableString(StrRecord):
     """A Python Unicode string that is part of a parse tree.
 
     When Bisque parses the markup <b>penguin</b>, it will
@@ -33,23 +34,33 @@ class BaseNavigableString(str):
 
     value: str
 
+    parent: Element | None = None
+    previous_element: Element | None = None
+    next_element: Element | None = None
+    previous_sibling: Element | None = None
+    next_sibling: Element | None = None
+
     PREFIX: str = ""
     SUFFIX: str = ""
 
-    def __new__(cls, value):
-        """Create a new NavigableString.
+    def __init__(self, value: str) -> None:
+        super().__init__(value=value)
+        self.setup()
 
-        When unpickling a NavigableString, this method is called with
-        the string in DEFAULT_OUTPUT_ENCODING. That encoding needs to be
-        passed in to the superclass's __new__ or the superclass won't know
-        how to handle non-ASCII characters.
-        """
-        if isinstance(value, str):
-            u = str.__new__(cls, value)
-        else:
-            u = str.__new__(cls, value, DEFAULT_OUTPUT_ENCODING)
-        u.setup()  # This sets all the defaults to None: TODO do this explicitly
-        return u
+    # def __new__(cls, value):
+    #     """Create a new NavigableString.
+
+    #     When unpickling a NavigableString, this method is called with
+    #     the string in DEFAULT_OUTPUT_ENCODING. That encoding needs to be
+    #     passed in to the superclass's __new__ or the superclass won't know
+    #     how to handle non-ASCII characters.
+    #     """
+    #     if isinstance(value, str):
+    #         u = str.__new__(cls, value)
+    #     else:
+    #         u = str.__new__(cls, value, DEFAULT_OUTPUT_ENCODING)
+    #     u.setup()  # This sets all the defaults to None: TODO do this explicitly
+    #     return u
 
     def __deepcopy__(self, memo, recursive=False):
         """A copy of a NavigableString has the same contents and class
@@ -59,13 +70,13 @@ class BaseNavigableString(str):
            so that NavigableString.__deepcopy__ implements the same
            signature as Tag.__deepcopy__.
         """
-        return type(self)(self)
+        return self.model_validate(**self.model_dump())
 
     def __copy__(self):
         """A copy of a NavigableString can only be a deep copy, because
         only one PageElement can occupy a given place in a parse tree.
         """
-        return self.__deepcopy__({})
+        return self.__deepcopy__()
 
     def __getnewargs__(self):
         return (str(self),)
@@ -78,10 +89,7 @@ class BaseNavigableString(str):
             return self
         else:
             raise AttributeError(
-                "'{}' object has no attribute '{}'".format(
-                    self.__class__.__name__,
-                    attr,
-                ),
+                f"{self.__class__.__name__!r} object has no attribute {attr!r}",
             )
 
     def output_ready(self, formatter="minimal"):
@@ -107,7 +115,7 @@ class BaseNavigableString(str):
         """Prevent NavigableString.name from ever being set."""
         raise AttributeError("A NavigableString cannot be given a name.")
 
-    def _all_strings(self, strip=False, types=DEFAULT_TYPES_SENTINEL):
+    def _all_strings(self, strip=False, types=DEFAULT_TYPES_SENTINEL) -> Iterator[str]:
         """Yield all strings of certain classes, possibly stripping them.
 
         This makes it easy for NavigableString to implement methods
@@ -147,9 +155,7 @@ class BaseNavigableString(str):
                 # Looking for one of a list of types.
                 return
 
-        value = self
-        if strip:
-            value = value.strip()
+        value = str(self).strip() if strip else str(self)
         if len(value) > 0:
             yield value
 
@@ -159,13 +165,9 @@ class BaseNavigableString(str):
 class BasePreformattedString:
     """A NavigableString not subject to the normal formatting rules.
 
-    This is an abstract class used for special kinds of strings such
-    as comments (the Comment class) and CDATA blocks (the CData
-    class).
+    This is an abstract class used for special kinds of strings such as
+    comments (the Comment class) and CDATA blocks (the CData class).
     """
-
-    PREFIX: str = ""
-    SUFFIX: str = ""
 
     def output_ready(self, formatter=None):
         """Make this string ready for output by adding any subclass-specific
@@ -182,7 +184,7 @@ class BasePreformattedString:
         if formatter is not None:
             # this used to assign to an unused var named "ignore"
             self.format_string(self, formatter)
-        return self.PREFIX + self + self.SUFFIX
+        return self.PREFIX + str(self) + self.SUFFIX
 
 
 class BaseCData:
