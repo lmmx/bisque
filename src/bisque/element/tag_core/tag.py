@@ -151,7 +151,10 @@ class BaseTag:
                 # subclass for most of its strings. When we ask the
                 self.interesting_string_types = builder.string_containers[self.name]
             else:
-                self.interesting_string_types = self.DEFAULT_INTERESTING_STRING_TYPES
+                self.interesting_string_types = (
+                    self.TYPE_TABLE.NavigableString,
+                    self.TYPE_TABLE.CData,
+                )
 
     def __deepcopy__(self, memo, recursive=True):
         """A deepcopy of a Tag is a new Tag, unconnected to the parse tree.

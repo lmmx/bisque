@@ -201,8 +201,6 @@ class Tag(BaseTag, PageElement, TabulatedType):
     create a Tag object representing the <b> tag.
     """
 
-    DEFAULT_INTERESTING_STRING_TYPES = (NavigableString, CData)
-
 
 # Section 4 (1 class)
 
