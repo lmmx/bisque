@@ -24,8 +24,8 @@ class TestNavigableString(SoupTest):
         s = NavigableString("fee ")
         cdata = CData("fie ")
         comment = Comment("foe ")
-
-        assert "fee " == s.get_text()
+        simple = s.get_text()
+        assert "fee " == simple
         assert "fee" == s.get_text(strip=True)
         assert ["fee "] == list(s.strings)
         assert ["fee"] == list(s.stripped_strings)

@@ -145,9 +145,14 @@ class BaseNavigableString(StrRecord):
                 # Looking for one of a list of types.
                 return
 
-        value = str(self).strip() if strip else str(self)
-        if len(value) > 0:
-            yield value
+        if strip:
+            clone = self.copy()
+            clone.value = self.value.strip()
+            returnable = clone
+        else:
+            returnable = self
+        if len(returnable.value) > 0:
+            yield returnable
 
     strings = property(_all_strings)
 
