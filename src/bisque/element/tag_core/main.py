@@ -1,27 +1,12 @@
 from __future__ import annotations
 
-import warnings
 from typing import ClassVar
 
 from ...typing.tabulation import BaseTypeTable
 from .page_element import BasePageElement
 from .results import BaseResultSet
 from .soup_strainer import BaseSoupStrainer
-from .string_types import (
-    BaseCData,
-    BaseComment,
-    BaseDeclaration,
-    BaseDoctype,
-    BaseNavigableString,
-    BasePreformattedString,
-    BaseProcessingInstruction,
-    BaseRubyParenthesisString,
-    BaseRubyTextString,
-    BaseScript,
-    BaseStylesheet,
-    BaseTemplateString,
-    BaseXMLProcessingInstruction,
-)
+from .string_types import BaseDoctype, BaseNavigableString, BasePreformattedString
 from .tag import BaseTag
 
 __all__ = [
@@ -50,9 +35,6 @@ __all__ = [
     "SoupStrainer",
     "ResultSet",
 ]
-
-# https://github.com/pydantic/pydantic/issues/7009
-warnings.filterwarnings("ignore", message="Field name .* shadows an attribute.*")
 
 
 class TYPE_TABLE(BaseTypeTable):
@@ -114,39 +96,49 @@ class PreformattedString(BasePreformattedString, NavigableString, TabulatedType)
     """
 
 
-class CData(BaseCData, PreformattedString, TabulatedType):
+class CData(PreformattedString, TabulatedType):
     """A CDATA block."""
 
+    PREFIX: str = "<![CDATA["
+    SUFFIX: str = "]]>"
 
-class ProcessingInstruction(
-    BaseProcessingInstruction,
-    PreformattedString,
-    TabulatedType,
-):
+
+class ProcessingInstruction(PreformattedString, TabulatedType):
     """A SGML processing instruction."""
 
+    PREFIX: str = "<?"
+    SUFFIX: str = ">"
 
-class XMLProcessingInstruction(
-    BaseXMLProcessingInstruction,
-    ProcessingInstruction,
-    TabulatedType,
-):
+
+class XMLProcessingInstruction(ProcessingInstruction, TabulatedType):
     """An XML processing instruction."""
 
+    PREFIX: str = "<?"
+    SUFFIX: str = "?>"
 
-class Comment(BaseComment, PreformattedString, TabulatedType):
+
+class Comment(PreformattedString, TabulatedType):
     """An HTML or XML comment."""
 
+    PREFIX: str = "<!--"
+    SUFFIX: str = "-->"
 
-class Declaration(BaseDeclaration, PreformattedString, TabulatedType):
+
+class Declaration(PreformattedString, TabulatedType):
     """An XML declaration."""
+
+    PREFIX: str = "<?"
+    SUFFIX: str = "?>"
 
 
 class Doctype(BaseDoctype, PreformattedString, TabulatedType):
     """A document type declaration."""
 
+    PREFIX: str = "<!DOCTYPE "
+    SUFFIX: str = ">\n"
 
-class Stylesheet(BaseStylesheet, NavigableString, TabulatedType):
+
+class Stylesheet(NavigableString, TabulatedType):
     """A NavigableString representing an stylesheet (probably
     CSS).
 
@@ -154,7 +146,7 @@ class Stylesheet(BaseStylesheet, NavigableString, TabulatedType):
     """
 
 
-class Script(BaseScript, NavigableString, TabulatedType):
+class Script(NavigableString, TabulatedType):
     """A NavigableString representing an executable script (probably
     Javascript).
 
@@ -162,7 +154,7 @@ class Script(BaseScript, NavigableString, TabulatedType):
     """
 
 
-class TemplateString(BaseTemplateString, NavigableString, TabulatedType):
+class TemplateString(NavigableString, TabulatedType):
     """A NavigableString representing a string found inside an HTML
     template embedded in a larger document.
 
@@ -170,7 +162,7 @@ class TemplateString(BaseTemplateString, NavigableString, TabulatedType):
     """
 
 
-class RubyTextString(BaseRubyTextString, NavigableString, TabulatedType):
+class RubyTextString(NavigableString, TabulatedType):
     """A NavigableString representing the contents of the <rt> HTML
     element.
 
@@ -181,7 +173,7 @@ class RubyTextString(BaseRubyTextString, NavigableString, TabulatedType):
     """
 
 
-class RubyParenthesisString(BaseRubyParenthesisString, NavigableString, TabulatedType):
+class RubyParenthesisString(NavigableString, TabulatedType):
     """A NavigableString representing the contents of the <rp> HTML
     element.
 

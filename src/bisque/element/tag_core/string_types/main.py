@@ -11,17 +11,7 @@ __all__ = [
     # Section 2: string types
     "BaseNavigableString",
     "BasePreformattedString",
-    "BaseCData",
-    "BaseProcessingInstruction",
-    "BaseXMLProcessingInstruction",
-    "BaseComment",
-    "BaseDeclaration",
     "BaseDoctype",
-    "BaseStylesheet",
-    "BaseScript",
-    "BaseTemplateString",
-    "BaseRubyTextString",
-    "BaseRubyParenthesisString",
 ]
 
 # Section 2: Text strings (13 classes)
@@ -184,46 +174,8 @@ class BasePreformattedString:
         return self.PREFIX + str(self) + self.SUFFIX
 
 
-class BaseCData:
-    """A CDATA block."""
-
-    PREFIX: str = "<![CDATA["
-    SUFFIX: str = "]]>"
-
-
-class BaseProcessingInstruction:
-    """A SGML processing instruction."""
-
-    PREFIX: str = "<?"
-    SUFFIX: str = ">"
-
-
-class BaseXMLProcessingInstruction:
-    """An XML processing instruction."""
-
-    PREFIX: str = "<?"
-    SUFFIX: str = "?>"
-
-
-class BaseComment:
-    """An HTML or XML comment."""
-
-    PREFIX: str = "<!--"
-    SUFFIX: str = "-->"
-
-
-class BaseDeclaration:
-    """An XML declaration."""
-
-    PREFIX: str = "<?"
-    SUFFIX: str = "?>"
-
-
 class BaseDoctype:
     """A document type declaration."""
-
-    PREFIX: str = "<!DOCTYPE "
-    SUFFIX: str = ">\n"
 
     @classmethod
     def for_name_and_ids(cls, name, pub_id, system_id):
@@ -247,46 +199,3 @@ class BaseDoctype:
             value += ' SYSTEM "%s"' % system_id
 
         return cls.TYPE_TABLE.Doctype(value)
-
-
-class BaseStylesheet:
-    """A NavigableString representing an stylesheet (probably
-    CSS).
-
-    Used to distinguish embedded stylesheets from textual content.
-    """
-
-
-class BaseScript:
-    """A NavigableString representing an executable script (probably
-    Javascript).
-
-    Used to distinguish executable code from textual content.
-    """
-
-
-class BaseTemplateString:
-    """A NavigableString representing a string found inside an HTML
-    template embedded in a larger document.
-
-    Used to distinguish such strings from the main body of the document.
-    """
-
-
-class BaseRubyTextString:
-    """A NavigableString representing the contents of the <rt> HTML
-    element.
-
-    https://dev.w3.org/html5/spec-LC/text-level-semantics.html#the-rt-element
-
-    Can be used to distinguish such strings from the strings they're
-    annotating.
-    """
-
-
-class BaseRubyParenthesisString:
-    """A NavigableString representing the contents of the <rp> HTML
-    element.
-
-    https://dev.w3.org/html5/spec-LC/text-level-semantics.html#the-rp-element
-    """
