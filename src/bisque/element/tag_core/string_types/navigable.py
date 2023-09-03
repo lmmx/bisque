@@ -7,14 +7,7 @@ from pydantic import Field
 from ....models import Element, StrRecord
 from ...sentinels import DEFAULT_TYPES_SENTINEL
 
-__all__ = [
-    # Section 2: string types
-    "BaseNavigableString",
-    "BasePreformattedString",
-    "BaseDoctype",
-]
-
-# Section 2: Text strings (13 classes)
+__all__ = ["BaseNavigableString"]
 
 
 class BaseNavigableString(StrRecord, validate_assignment=True):
@@ -147,55 +140,3 @@ class BaseNavigableString(StrRecord, validate_assignment=True):
             yield returnable
 
     strings = property(_all_strings)
-
-
-class BasePreformattedString:
-    """A NavigableString not subject to the normal formatting rules.
-
-    This is an abstract class used for special kinds of strings such as
-    comments (the Comment class) and CDATA blocks (the CData class).
-    """
-
-    def output_ready(self, formatter=None):
-        """Make this string ready for output by adding any subclass-specific
-            prefix or suffix.
-
-        :param formatter: A Formatter object, or a string naming one
-            of the standard formatters. The string will be passed into the
-            Formatter, but only to trigger any side effects: the return
-            value is ignored.
-
-        :return: The string, with any subclass-specific prefix and
-           suffix added on.
-        """
-        if formatter is not None:
-            # this used to assign to an unused var named "ignore"
-            self.format_string(self, formatter)
-        return self.PREFIX + str(self) + self.SUFFIX
-
-
-class BaseDoctype:
-    """A document type declaration."""
-
-    @classmethod
-    def for_name_and_ids(cls, name, pub_id, system_id):
-        """Generate an appropriate document type declaration for a given
-        public ID and system ID.
-
-        :param name: The name of the document's root element, e.g. 'html'.
-        :param pub_id: The Formal Public Identifier for this document type,
-            e.g. '-//W3C//DTD XHTML 1.1//EN'
-        :param system_id: The system identifier for this document type,
-            e.g. 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'
-
-        :return: A Doctype.
-        """
-        value = name or ""
-        if pub_id is not None:
-            value += ' PUBLIC "%s"' % pub_id
-            if system_id is not None:
-                value += ' "%s"' % system_id
-        elif system_id is not None:
-            value += ' SYSTEM "%s"' % system_id
-
-        return cls.TYPE_TABLE.Doctype(value)
