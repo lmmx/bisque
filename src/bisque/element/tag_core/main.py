@@ -295,10 +295,14 @@ class Tag(BaseTag, PageElement, TabulatedType):
                 # We're not interested in strings of this type.
                 continue
             if strip:
-                descendant.value = descendant.value.strip()
-                if len(descendant) == 0:
+                clone = descendant.copy()
+                clone.value = descendant.value.strip()
+                if len(clone) == 0:
                     continue
-            yield descendant
+                returnable = clone
+            else:
+                returnable = descendant
+            yield returnable
 
     strings = property(_all_strings)
 
