@@ -20,6 +20,7 @@ class BasePageElement:
     NavigableString, Tag, etc. are all subclasses of PageElement.
     """
 
+    default: ClassVar[type] = DEFAULT_TYPES_SENTINEL
     TYPE_TABLE: ClassVar[type]
 
     # In general, we can't tell just by looking at an element whether
@@ -136,8 +137,6 @@ class BasePageElement:
             # used on HTML markup.
             return getattr(self, "is_xml", False)
         return self.parent._is_xml
-
-    default = DEFAULT_TYPES_SENTINEL
 
     def _all_strings(self, strip=False, types=DEFAULT_TYPES_SENTINEL):
         """Yield all strings of certain classes, possibly stripping them.
