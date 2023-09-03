@@ -63,9 +63,7 @@ class BaseSoupStrainer:
 
         self.attrs = normalized_attrs
         self.string = self._normalize_search_value(string)
-
-        # DEPRECATED but just in case someone is checking this.
-        self.text = self.string
+        self.text = self.string  # Allegedly deprecated but still used in tests
 
     def _normalize_search_value(self, value):
         # Leave it alone if it's a Unicode string, a callable, a
