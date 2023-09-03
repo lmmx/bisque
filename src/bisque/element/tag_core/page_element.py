@@ -835,9 +835,9 @@ class BasePageElement:
             i = i.parent
 
     @property
-    def decomposed(self):
+    def has_decomposed(self):
         """Check whether a PageElement has been decomposed.
 
         :rtype: bool
         """
-        return getattr(self, "_decomposed", False) or False
+        return getattr(self, "decomposed", False) or False

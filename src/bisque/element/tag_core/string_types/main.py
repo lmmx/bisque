@@ -27,7 +27,7 @@ __all__ = [
 # Section 2: Text strings (13 classes)
 
 
-class BaseNavigableString(StrRecord):
+class BaseNavigableString(StrRecord, validate_assignment=True):
     """A Python Unicode string that is part of a parse tree.
 
     When Bisque parses the markup <b>penguin</b>, it will
@@ -41,6 +41,8 @@ class BaseNavigableString(StrRecord):
     next_element: Element | None = Field(None, repr=False)
     previous_sibling: Element | None = Field(None, repr=False)
     next_sibling: Element | None = Field(None, repr=False)
+    contents: list[Element] = Field([], repr=False)
+    decomposed: bool = Field(False, repr=False)
 
     PREFIX: str = ""
     SUFFIX: str = ""
@@ -146,7 +148,7 @@ class BaseNavigableString(StrRecord):
                 return
 
         if strip:
-            clone = self.copy()
+            clone = self.model_copy()
             clone.value = self.value.strip()
             returnable = clone
         else:

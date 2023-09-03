@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import warnings
 
+from pydantic import BaseModel
+
 from bisque.css import CSS
 
 from ..attributes import AttributeValueWithCharsetSubstitution
@@ -205,15 +207,20 @@ class BaseTag:
         The behavior of a decomposed PageElement is undefined and you
         should never use one for anything, but if you need to _check_
         whether an element has been decomposed, you can use the
-        `decomposed` property.
+        `has_decomposed` property.
         """
         self.extract()
         i = self
         while i is not None:
             n = i.next_element
-            i.clear()
+            # Do this both before and after because of Pydantic field references
             i.contents = []
-            i._decomposed = True
+            i.decomposed = True
+            i.clear()
+            # Only needs repeating for Pydantic models
+            if isinstance(i, BaseModel):
+                i.contents = []
+                i.decomposed = True
             i = n
 
     def index(self, element):

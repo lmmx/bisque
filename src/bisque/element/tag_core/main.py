@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import ClassVar, Iterator
 
+from pydantic import BaseModel
+
 from bisque.formatter import Formatter
 
 from ...models import StrMixIn, StrTypes
@@ -295,7 +297,8 @@ class Tag(BaseTag, PageElement, TabulatedType):
                 # We're not interested in strings of this type.
                 continue
             if strip:
-                clone = descendant.copy()
+                is_model = issubclass(descendant_type, BaseModel)
+                clone = descendant.model_copy() if is_model else descendant.copy()
                 clone.value = descendant.value.strip()
                 if len(clone) == 0:
                     continue
