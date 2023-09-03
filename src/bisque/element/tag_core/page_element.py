@@ -4,14 +4,18 @@ import warnings
 from collections.abc import Callable
 from typing import ClassVar
 
+from pydantic import BaseModel, Field
+
 from bisque.formatter import Formatter, HTMLFormatter, XMLFormatter
 
 from ..sentinels import DEFAULT_TYPES_SENTINEL
 
 __all__ = ["BasePageElement"]
 
+Element = type
 
-class BasePageElement:
+
+class BasePageElement(BaseModel):
     """Standalone methods and attributes for PageElement.
 
     Contains the navigational information for some part of the page:
@@ -23,10 +27,19 @@ class BasePageElement:
     default: ClassVar[type] = DEFAULT_TYPES_SENTINEL
     TYPE_TABLE: ClassVar[type]
 
+    parent: Element | None = Field(None, repr=False)
+    previous_element: Element | None = Field(None, repr=False)
+    next_element: Element | None = Field(None, repr=False)
+    previous_sibling: Element | None = Field(None, repr=False)
+    next_sibling: Element | None = Field(None, repr=False)
+    contents: list[Element] = Field([], repr=False)
+    decomposed: bool = Field(False, repr=False)
+
     # In general, we can't tell just by looking at an element whether
     # it's contained in an XML document or an HTML document. But for
     # Tags (q.v.) we can store this information at parse time.
-    known_xml = None
+    known_xml: bool | None = None
+    ROOT_TAG_NAME: str | None = None
 
     def setup(
         self,

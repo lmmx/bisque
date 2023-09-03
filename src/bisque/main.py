@@ -1,6 +1,7 @@
 import sys
 import warnings
 from collections import Counter
+from typing import ClassVar
 
 from .builder import builder_registry
 from .builder._htmlparser import HTMLParserTreeBuilder
@@ -69,17 +70,21 @@ class Bisque(Tag):
     # Since Bisque subclasses Tag, it's possible to treat it as
     # a Tag with a .name. This name makes it clear the Bisque
     # object isn't a real markup tag.
-    ROOT_TAG_NAME = "[document]"
+    ROOT_TAG_NAME: str = "[document]"
 
     # If the end-user gives no indication which tree builder they
     # want, look for one with these features.
-    DEFAULT_BUILDER_FEATURES = ["html", "fast"]
+    DEFAULT_BUILDER_FEATURES: list[str] = ["html", "fast"]
+
+    element_classes: dict[type, type] = {}
 
     # A string containing all ASCII whitespace characters, used in
     # endData() to detect data chunks that seem 'empty'.
-    ASCII_SPACES = "\x20\x0a\x09\x0c\x0d"
+    ASCII_SPACES: ClassVar[str] = "\x20\x0a\x09\x0c\x0d"
 
-    NO_PARSER_SPECIFIED_WARNING = "No parser was explicitly specified, so I'm using the best available %(markup_type)s parser for this system (\"%(parser)s\"). This usually isn't a problem, but if you run this code on another system, or in a different virtual environment, it may use a different parser and behave differently.\n\nThe code that caused this warning is on line %(line_number)s of the file %(filename)s. To get rid of this warning, pass the additional argument 'features=\"%(parser)s\"' to the Bisque constructor.\n"
+    NO_PARSER_SPECIFIED_WARNING: ClassVar[
+        str
+    ] = "No parser was explicitly specified, so I'm using the best available %(markup_type)s parser for this system (\"%(parser)s\"). This usually isn't a problem, but if you run this code on another system, or in a different virtual environment, it may use a different parser and behave differently.\n\nThe code that caused this warning is on line %(line_number)s of the file %(filename)s. To get rid of this warning, pass the additional argument 'features=\"%(parser)s\"' to the Bisque constructor.\n"
 
     def __init__(
         self,
@@ -207,7 +212,8 @@ class Bisque(Tag):
             )
             from_encoding = None
 
-        self.element_classes = element_classes or dict()
+        if element_classes is not None:
+            self.element_classes = element_classes
 
         # We need this information to track whether or not the builder
         # was specified well enough that we can omit the 'you need to

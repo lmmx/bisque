@@ -28,7 +28,7 @@ and 5 class variables
 """
 from collections import defaultdict
 
-from bisque.element import nonwhitespace_re
+from bisque.element.whitespace import nonwhitespace_re
 
 from .parser_names import INIT
 

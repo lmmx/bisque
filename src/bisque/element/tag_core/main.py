@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import ClassVar
 
+from bisque.builder.core.main import TreeBuilder
+
 from ...typing.tabulation import BaseTypeTable
 from .page_element import BasePageElement
 from .results import BaseResultSet
@@ -74,6 +76,8 @@ class PageElement(BasePageElement, TabulatedType):
 
     NavigableString, Tag, etc. are all subclasses of PageElement.
     """
+
+    contents: list = []
 
 
 # Section 2: Text strings (13 classes)
@@ -195,6 +199,8 @@ class Tag(BaseTag, PageElement, TabulatedType):
     When Bisque parses the markup <b>penguin</b>, it will
     create a Tag object representing the <b> tag.
     """
+
+    builder: type[TreeBuilder] | TreeBuilder = None
 
 
 # Section 4 (1 class)
