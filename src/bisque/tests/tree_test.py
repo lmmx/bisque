@@ -1245,24 +1245,25 @@ class TestTreeModification(SoupTest):
 
         # clear using decompose()
         em = a.em
+        # TODO: fix use of __dict__.clear() below here
         a.clear(decompose=True)
         assert 0 == len(em.contents)
 
     def test_decompose(self):
-        # Test PageElement.decompose() and PageElement.decomposed
+        # Test PageElement.decompose() and PageElement.has_decomposed
         soup = self.soup("<p><a>String <em>Italicized</em></a></p><p>Another para</p>")
         p1, p2 = soup.find_all("p")
         a = p1.a
         text = p1.em.string
         for i in [p1, p2, a, text]:
-            assert False == i.decomposed
+            assert False == i.has_decomposed
 
         # This sets p1 and everything beneath it to decomposed.
         p1.decompose()
         for i in [p1, a, text]:
-            assert True == i.decomposed
+            assert i.has_decomposed is True
         # p2 is unaffected.
-        assert False == p2.decomposed
+        assert False == p2.has_decomposed
 
     def test_string_set(self):
         """Tag.string = 'string'"""

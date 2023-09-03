@@ -3,6 +3,7 @@ from bisque.builder.core.html_builder import HTMLTreeBuilder
 from bisque.builder.core.main import ParserRejectedMarkup
 from bisque.builder.core.parser_names import HTMLPARSER
 from bisque.dammit import UnicodeDammit
+from bisque.models import StrTypes
 
 from .parser import BisqueHTMLParser
 
@@ -72,7 +73,7 @@ class HTMLParserTreeBuilder(HTMLTreeBuilder):
          document to Unicode and parsing it. Each strategy will be tried
          in turn.
         """
-        if isinstance(markup, str):
+        if isinstance(markup, StrTypes):
             # Parse Unicode as-is.
             yield (markup, None, None, False)
             return

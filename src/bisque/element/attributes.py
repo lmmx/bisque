@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import re
+from typing import ClassVar
 
+from pydantic import Field, model_validator
+
+from ..models import StrRecord, StrRoot
 from .encodings import PYTHON_SPECIFIC_ENCODINGS
 
 __all__ = [
@@ -12,31 +16,24 @@ __all__ = [
 ]
 
 
-class NamespacedAttribute(str):
+class NamespacedAttribute(StrRecord):
     """A namespaced string (e.g. 'xml:lang') that remembers the namespace
     ('xml') and the name ('lang') that were used to create it.
     """
 
-    def __new__(cls, prefix, name=None, namespace=None):
-        if not name:
-            # This is the default namespace. Its name "has no value"
-            # per https://www.w3.org/TR/xml-names/#defaulting
-            name = None
+    prefix: str | None
+    name: str | None = Field(
+        None,
+        description="""This is the default namespace. Its name "has no value"
+                       per https://www.w3.org/TR/xml-names/#defaulting""",
+    )
+    namespace: str | None = None
 
-        if not name:
-            obj = str.__new__(cls, prefix)
-        elif not prefix:
-            # Not really namespaced.
-            obj = str.__new__(cls, name)
-        else:
-            obj = str.__new__(cls, prefix + ":" + name)
-        obj.prefix = prefix
-        obj.name = name
-        obj.namespace = namespace
-        return obj
+    def __str__(self) -> str:
+        return ":".join(filter(None, [self.prefix, self.name]))
 
 
-class AttributeValueWithCharsetSubstitution(str):
+class AttributeValueWithCharsetSubstitution(StrRecord):
     """A stand-in object for a character encoding specified in HTML."""
 
 
@@ -47,18 +44,13 @@ class CharsetMetaAttributeValue(AttributeValueWithCharsetSubstitution):
     value of the 'charset' attribute will be one of these objects.
     """
 
-    def __new__(cls, original_value):
-        obj = str.__new__(cls, original_value)
-        obj.original_value = original_value
-        return obj
+    original_value: str
 
     def encode(self, encoding):
         """When an HTML document is being encoded to a given encoding, the
         value of a meta tag's 'charset' is the name of the encoding.
         """
-        if encoding in PYTHON_SPECIFIC_ENCODINGS:
-            return ""
-        return encoding
+        return "" if encoding in PYTHON_SPECIFIC_ENCODINGS else encoding
 
 
 class ContentMetaAttributeValue(AttributeValueWithCharsetSubstitution):
@@ -70,23 +62,24 @@ class ContentMetaAttributeValue(AttributeValueWithCharsetSubstitution):
     The value of the 'content' attribute will be one of these objects.
     """
 
-    CHARSET_RE = re.compile(r"((^|;)\s*charset=)([^;]*)", re.M)
+    original_value: str
 
-    def __new__(cls, original_value):
-        match = cls.CHARSET_RE.search(original_value)
-        if match is None:
-            # No substitution necessary.
-            return str.__new__(str, original_value)
+    CHARSET_RE: ClassVar[re.Pattern] = re.compile(r"((^|;)\s*charset=)([^;]*)", re.M)
 
-        obj = str.__new__(cls, original_value)
-        obj.original_value = original_value
-        return obj
+    @model_validator(mode="after")
+    def _choose_str_type(
+        cls,
+        self: ContentMetaAttributeValue,
+    ) -> StrRoot | ContentMetaAttributeValue:
+        matched = self.CHARSET_RE.search(self.original_value) is not None
+        # If not matched, no substitution necessary.
+        return self if matched else StrRoot(self.original_value)
 
     def encode(self, encoding):
         if encoding in PYTHON_SPECIFIC_ENCODINGS:
             return ""
 
-        def rewrite(match):
-            return match.group(1) + encoding
+        def rewrite(matched: re.Match):
+            return matched.group(1) + encoding
 
         return self.CHARSET_RE.sub(rewrite, self.original_value)

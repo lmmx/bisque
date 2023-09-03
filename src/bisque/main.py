@@ -650,7 +650,6 @@ class Bisque(Tag):
                 previous_element = o.previous_element
 
         fix = parent.next_element is not None
-
         o.setup(parent, previous_element, next_element, previous_sibling, next_sibling)
 
         self._most_recent_element = o

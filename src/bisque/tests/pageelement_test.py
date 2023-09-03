@@ -17,7 +17,7 @@ class TestEncoding(SoupTest):
     def test_unicode_string_can_be_encoded(self):
         html = "<b>\N{SNOWMAN}</b>"
         soup = self.soup(html)
-        assert soup.b.string.encode("utf-8") == "\N{SNOWMAN}".encode()
+        assert str(soup.b.string).encode("utf-8") == "\N{SNOWMAN}".encode()
 
     def test_tag_containing_unicode_string_can_be_encoded(self):
         html = "<b>\N{SNOWMAN}</b>"
@@ -211,7 +211,7 @@ class TestFormatters(SoupTest):
         encoded = soup.b.encode("utf-8")
         assert encoded == markup.encode("utf-8")
 
-    def test_encoding_substitution(self):
+    def test_encoding_substitution_correct(self):
         # Here's the <meta> tag saying that a document is
         # encoded in Shift-JIS.
         meta_tag = (
@@ -224,6 +224,7 @@ class TestFormatters(SoupTest):
 
         # Encode the document into some encoding, and the encoding is
         # substituted into the meta tag.
+        # We want to make sure that `ContentMetaAttributeValue.encode` is called
         utf_8 = soup.encode("utf-8")
         assert b"charset=utf-8" in utf_8
 
