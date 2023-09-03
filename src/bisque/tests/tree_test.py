@@ -1245,6 +1245,7 @@ class TestTreeModification(SoupTest):
 
         # clear using decompose()
         em = a.em
+        # TODO: fix use of __dict__.clear() below here
         a.clear(decompose=True)
         assert 0 == len(em.contents)
 

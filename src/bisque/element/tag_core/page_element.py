@@ -77,6 +77,9 @@ class BasePageElement:
         if previous_sibling is not None:
             self.previous_sibling.next_sibling = self
 
+    def clear(self) -> None:
+        self.__dict__.clear()
+
     def format_string(self, s, formatter):
         """Format the given string using the given formatter.
 

@@ -256,7 +256,10 @@ class Tag(BaseTag, PageElement, TabulatedType):
     def string(self, string):
         """Replace this PageElement's contents with `string`."""
         self.clear()
-        self.append(string.__class__(string))
+        if isinstance(string, str):
+            self.append(string.__class__(string))
+        else:
+            self.append(string.__class__(value=string.value))
 
     DEFAULT_INTERESTING_STRING_TYPES = (NavigableString, CData)
 

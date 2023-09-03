@@ -211,7 +211,7 @@ class BaseTag:
         i = self
         while i is not None:
             n = i.next_element
-            i.__dict__.clear()
+            i.clear()
             i.contents = []
             i._decomposed = True
             i = n

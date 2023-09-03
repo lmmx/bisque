@@ -49,6 +49,9 @@ class BaseNavigableString(StrRecord):
         super().__init__(value=value)
         self.setup()
 
+    def clear(self) -> None:
+        self.__dict__.clear()
+
     def __deepcopy__(self, memo, recursive=False):
         """A copy of a NavigableString has the same contents and class
         as the original, but it is not connected to the parse tree.
