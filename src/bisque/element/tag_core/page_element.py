@@ -86,13 +86,12 @@ class BasePageElement:
         :param s: A string.
         :param formatter: A Formatter object, or a string naming one of the standard formatters.
         """
-        value = s if isinstance(s, str) else str(s)
         if formatter is None:
-            output = value
+            output = s if isinstance(s, str) else str(s)
         else:
             if not isinstance(formatter, Formatter):
                 formatter = self.formatter_for_name(formatter)
-            output = formatter.substitute(value)
+            output = formatter.substitute(s)
         return output
 
     def formatter_for_name(self, formatter):

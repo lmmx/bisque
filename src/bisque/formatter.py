@@ -117,8 +117,9 @@ class Formatter(EntitySubstitution):
         :return: A string with certain characters replaced by named
            or numeric entities.
         """
+        string = str(ns)
         if not self.entity_substitution:
-            return ns
+            return string
         from .element import NavigableString
 
         if (
@@ -127,9 +128,9 @@ class Formatter(EntitySubstitution):
             and ns.parent.name in self.cdata_containing_tags
         ):
             # Do nothing.
-            return ns
+            return string
         # Substitute.
-        return self.entity_substitution(ns)
+        return self.entity_substitution(string)
 
     def attribute_value(self, value):
         """Process the value of an attribute.
