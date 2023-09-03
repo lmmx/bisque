@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import warnings
 from typing import ClassVar
 
 from ...typing.tabulation import BaseTypeTable
 from .page_element import BasePageElement
+from .results import BaseResultSet
 from .soup_strainer import BaseSoupStrainer
 from .string_types import (
     BaseCData,
@@ -48,6 +50,9 @@ __all__ = [
     "SoupStrainer",
     "ResultSet",
 ]
+
+# https://github.com/pydantic/pydantic/issues/7009
+warnings.filterwarnings("ignore", message="Field name .* shadows an attribute.*")
 
 
 class TYPE_TABLE(BaseTypeTable):
@@ -204,27 +209,19 @@ class Tag(BaseTag, PageElement, TabulatedType):
 
 
 class SoupStrainer(BaseSoupStrainer, TabulatedType):
-    "..."
+    """Encapsulates a number of ways of matching a markup element (tag or
+    string).
+
+    This is primarily used to underpin the find_* methods, but you can
+    create one yourself and pass it in as `parse_only` to the
+    `Bisque` constructor, to parse a subset of a large
+    document.
+    """
 
 
-class ResultSet(list, TabulatedType):
+class ResultSet(BaseResultSet, TabulatedType):
     """A ResultSet is just a list that keeps track of the SoupStrainer
     that created it."""
-
-    def __init__(self, source, result=()):
-        """Constructor.
-
-        :param source: A SoupStrainer.
-        :param result: A list of PageElements.
-        """
-        super().__init__(result)
-        self.source = source
-
-    def __getattr__(self, key):
-        """Raise a helpful exception to explain a common code fix."""
-        raise AttributeError(
-            f"ResultSet object has no attribute {key!r}. You're probably treating a list of elements like a single element. Did you call find_all() when you meant to call find()?",
-        )
 
 
 TYPE_TABLE.setup()
