@@ -111,10 +111,8 @@ class TestNavigableStringSubclasses(SoupTest):
         soup = self.soup(
             "<template>Some text<p>In a tag</p></template>Some text outside",
         )
-        assert all(
-            isinstance(x, TemplateString)
-            for x in soup.template._all_strings(types=None)
-        )
+        all_strings = list(soup.template._all_strings(types=None))
+        assert all(isinstance(x, TemplateString) for x in all_strings)
 
         # Once the <template> tag closed, we went back to using
         # NavigableString.

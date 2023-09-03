@@ -294,12 +294,11 @@ class Tag(BaseTag, PageElement, TabulatedType):
             elif types is not None and descendant_type not in types:
                 # We're not interested in strings of this type.
                 continue
-            value = str(descendant)
             if strip:
-                value = value.strip()
-                if len(value) == 0:
+                descendant.value = descendant.value.strip()
+                if len(descendant) == 0:
                     continue
-            yield value
+            yield descendant
 
     strings = property(_all_strings)
 

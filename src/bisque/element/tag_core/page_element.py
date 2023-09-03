@@ -173,7 +173,9 @@ class BasePageElement:
 
         :return: A string.
         """
-        return separator.join([s for s in self._all_strings(strip=strip, types=types)])
+        return separator.join(
+            [s.value for s in self._all_strings(strip=strip, types=types)],
+        )
 
     getText = get_text
     text = property(get_text)
