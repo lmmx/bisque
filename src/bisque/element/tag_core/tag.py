@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import warnings
+from typing import Iterator
 
 from pydantic import BaseModel
 
 from bisque.css import CSS
+from bisque.formatter import Formatter
 
 from ..attributes import AttributeValueWithCharsetSubstitution
 from ..encodings import DEFAULT_OUTPUT_ENCODING
+from ..sentinels import DEFAULT_TYPES_SENTINEL, ElementEvent
 
 __all__ = ["BaseTag"]
 
@@ -150,6 +153,32 @@ class BaseTag:
             else:
                 self.interesting_string_types = self.DEFAULT_INTERESTING_STRING_TYPES
 
+    def __deepcopy__(self, memo, recursive=True):
+        """A deepcopy of a Tag is a new Tag, unconnected to the parse tree.
+        Its contents are a copy of the old Tag's contents.
+        """
+        clone = self._clone()
+
+        if recursive:
+            # Clone this tag's descendants recursively, but without
+            # making any recursive function calls.
+            tag_stack = [clone]
+            for event, element in self._event_stream(self.descendants):
+                if event is ElementEvent.END:
+                    # Stop appending incoming Tags to the Tag that was
+                    # just closed.
+                    tag_stack.pop()
+                else:
+                    descendant_clone = element.__deepcopy__(memo, recursive=False)
+                    # Add to its parent's .contents
+                    tag_stack[-1].append(descendant_clone)
+
+                    if event is ElementEvent.START:
+                        # Add the Tag itself to the stack so that its
+                        # children will be .appended to it.
+                        tag_stack.append(descendant_clone)
+        return clone
+
     def __copy__(self):
         """A copy of a Tag must always be a deep copy, because a Tag's
         children can only have one parent at a time.
@@ -198,6 +227,83 @@ class BaseTag:
         """
         return len(self.contents) == 0 and self.can_be_empty_element
 
+    @property
+    def string(self):
+        """Convenience property to get the single string within this
+        PageElement.
+
+        TODO It might make sense to have NavigableString.string return
+        itself.
+
+        :return: If this element has a single string child, return
+         value is that string. If this element has one child tag,
+         return value is the 'string' attribute of the child tag,
+         recursively. If this element is itself a string, has no
+         children, or has more than one child, return value is None.
+        """
+        if len(self.contents) != 1:
+            return None
+        child = self.contents[0]
+        if isinstance(child, self.TYPE_TABLE.NavigableString):
+            return child
+        return child.string
+
+    @string.setter
+    def string(self, string):
+        """Replace this PageElement's contents with `string`."""
+        self.clear()
+        if isinstance(string, str):
+            self.append(string.__class__(string))
+        else:
+            self.append(string.__class__(value=string.value))
+
+    def _all_strings(self, strip=False, types=DEFAULT_TYPES_SENTINEL) -> Iterator[str]:
+        """Yield all strings of certain classes, possibly stripping them.
+
+        :param strip: If True, all strings will be stripped before being
+            yielded.
+
+        :param types: A tuple of NavigableString subclasses. Any strings of
+            a subclass not found in this list will be ignored. By
+            default, the subclasses considered are the ones found in
+            self.interesting_string_types. If that's not specified,
+            only NavigableString and CData objects will be
+            considered. That means no comments, processing
+            instructions, etc.
+
+        :yield: A sequence of strings.
+
+        """
+        if types is DEFAULT_TYPES_SENTINEL:
+            types = self.interesting_string_types
+
+        for descendant in self.descendants:
+            if types is None and not isinstance(
+                descendant,
+                self.TYPE_TABLE.NavigableString,
+            ):
+                continue
+            descendant_type = type(descendant)
+            if isinstance(types, type):
+                if descendant_type is not types:
+                    # We're not interested in strings of this type.
+                    continue
+            elif types is not None and descendant_type not in types:
+                # We're not interested in strings of this type.
+                continue
+            if strip:
+                is_model = issubclass(descendant_type, BaseModel)
+                clone = descendant.model_copy() if is_model else descendant.copy()
+                clone.value = descendant.value.strip()
+                if len(clone) == 0:
+                    continue
+                returnable = clone
+            else:
+                returnable = descendant
+            yield returnable
+
+    strings = property(_all_strings)
+
     def decompose(self):
         """Recursively destroys this PageElement and its children.
 
@@ -222,6 +328,62 @@ class BaseTag:
                 i.contents = []
                 i.decomposed = True
             i = n
+
+    def clear(self, decompose=False):
+        """Wipe out all children of this PageElement by calling extract()
+           on them.
+
+        :param decompose: If this is True, decompose() (a more
+            destructive method) will be called instead of extract().
+        """
+        if decompose:
+            for element in self.contents[:]:
+                if isinstance(element, self.TYPE_TABLE.Tag):
+                    element.decompose()
+                else:
+                    element.extract()
+        else:
+            for element in self.contents[:]:
+                element.extract()
+
+    def smooth(self):
+        """Smooth out this element's children by consolidating consecutive
+        strings.
+
+        This makes pretty-printed output look more natural following a
+        lot of operations that modified the tree.
+        """
+        # Mark the first position of every pair of children that need
+        # to be consolidated.  Do this rather than making a copy of
+        # self.contents, since in most cases very few strings will be
+        # affected.
+        marked = []
+        for i, a in enumerate(self.contents):
+            if isinstance(a, self.TYPE_TABLE.Tag):
+                # Recursively smooth children.
+                a.smooth()
+            if i == len(self.contents) - 1:
+                # This is the last item in .contents, and it's not a
+                # tag. There's no chance it needs any work.
+                continue
+            b = self.contents[i + 1]
+            if (
+                isinstance(a, self.TYPE_TABLE.NavigableString)
+                and isinstance(b, self.TYPE_TABLE.NavigableString)
+                and not isinstance(a, self.TYPE_TABLE.PreformattedString)
+                and not isinstance(b, self.TYPE_TABLE.PreformattedString)
+            ):
+                marked.append(i)
+
+        # Go over the marked positions in reverse order, so that
+        # removing items from .contents won't affect the remaining
+        # positions.
+        for i in reversed(marked):
+            a = self.contents[i]
+            b = self.contents[i + 1]
+            b.extract()
+            n = self.TYPE_TABLE.NavigableString(a + b)
+            a.replace_with(n)
 
     def index(self, element):
         """Find the index of a child by identity, not value.
@@ -378,11 +540,141 @@ class BaseTag:
         u = self.decode(indent_level, encoding, formatter)
         return u.encode(encoding, errors)
 
-    # Names for the different events yielded by _event_stream
-    START_ELEMENT_EVENT = object()
-    END_ELEMENT_EVENT = object()
-    EMPTY_ELEMENT_EVENT = object()
-    STRING_ELEMENT_EVENT = object()
+    def decode(
+        self,
+        indent_level=None,
+        eventual_encoding=DEFAULT_OUTPUT_ENCODING,
+        formatter="minimal",
+        iterator=None,
+    ):
+        pieces = []
+        # First off, turn a non-Formatter `formatter` into a Formatter
+        # object. This will stop the lookup from happening over and
+        # over again.
+        if not isinstance(formatter, Formatter):
+            formatter = self.formatter_for_name(formatter)
+
+        if indent_level is True:
+            indent_level = 0
+
+        # The currently active tag that put us into string literal
+        # mode. Until this element is closed, children will be treated
+        # as string literals and not pretty-printed. String literal
+        # mode is turned on immediately after this tag begins, and
+        # turned off immediately before it's closed. This means there
+        # will be whitespace before and after the tag itself.
+        string_literal_tag = None
+
+        for event, element in self._event_stream(iterator):
+            if event in (
+                ElementEvent.START,
+                ElementEvent.EMPTY,
+            ):
+                piece = element._format_tag(eventual_encoding, formatter, opening=True)
+            elif event is ElementEvent.END:
+                piece = element._format_tag(eventual_encoding, formatter, opening=False)
+                if indent_level is not None:
+                    indent_level -= 1
+            else:
+                piece = element.output_ready(formatter)
+
+            # Now we need to apply the 'prettiness' -- extra
+            # whitespace before and/or after this tag. This can get
+            # complicated because certain tags, like <pre> and
+            # <script>, can't be prettified, since adding whitespace would
+            # change the meaning of the content.
+
+            # The default behavior is to add whitespace before and
+            # after an element when string literal mode is off, and to
+            # leave things as they are when string literal mode is on.
+            if string_literal_tag:
+                indent_before = indent_after = False
+            else:
+                indent_before = indent_after = True
+
+            # The only time the behavior is more complex than that is
+            # when we encounter an opening or closing tag that might
+            # put us into or out of string literal mode.
+            if (
+                event is ElementEvent.START
+                and not string_literal_tag
+                and not element._should_pretty_print()
+            ):
+                # We are about to enter string literal mode. Add
+                # whitespace before this tag, but not after. We
+                # will stay in string literal mode until this tag
+                # is closed.
+                indent_before = True
+                indent_after = False
+                string_literal_tag = element
+            elif event is ElementEvent.END and element is string_literal_tag:
+                # We are about to exit string literal mode by closing
+                # the tag that sent us into that mode. Add whitespace
+                # after this tag, but not before.
+                indent_before = False
+                indent_after = True
+                string_literal_tag = None
+
+            # Now we know whether to add whitespace before and/or
+            # after this element.
+            if indent_level is not None:
+                if indent_before or indent_after:
+                    if isinstance(element, self.TYPE_TABLE.NavigableString):
+                        piece = piece.strip()
+                    if piece:
+                        piece = self._indent_string(
+                            piece,
+                            indent_level,
+                            formatter,
+                            indent_before,
+                            indent_after,
+                        )
+                if event == ElementEvent.START:
+                    indent_level += 1
+            pieces.append(piece)
+        return "".join(pieces)
+
+    def _event_stream(self, iterator=None):
+        """Yield a sequence of events that can be used to reconstruct the DOM
+        for this element.
+
+        This lets us recreate the nested structure of this element
+        (e.g. when formatting it as a string) without using recursive
+        method calls.
+
+        This is similar in concept to the SAX API, but it's a simpler
+        interface designed for internal use. The events are different
+        from SAX and the arguments associated with the events are Tags
+        and other Bisque objects.
+
+        :param iterator: An alternate iterator to use when traversing
+         the tree.
+        """
+        tag_stack = []
+
+        iterator = iterator or self.self_and_descendants
+
+        for c in iterator:
+            # If the parent of the element we're about to yield is not
+            # the tag currently on the stack, it means that the tag on
+            # the stack closed before this element appeared.
+            while tag_stack and c.parent != tag_stack[-1]:
+                now_closed_tag = tag_stack.pop()
+                yield ElementEvent.END, now_closed_tag
+
+            if isinstance(c, self.TYPE_TABLE.Tag):
+                if c.is_empty_element:
+                    yield ElementEvent.EMPTY, c
+                else:
+                    yield ElementEvent.START, c
+                    tag_stack.append(c)
+                    continue
+            else:
+                yield ElementEvent.STRING, c
+
+        while tag_stack:
+            now_closed_tag = tag_stack.pop()
+            yield ElementEvent.END, now_closed_tag
 
     def _indent_string(self, s, indent_level, formatter, indent_before, indent_after):
         """Add indentation whitespace before and/or after a string.
@@ -577,6 +869,45 @@ class BaseTag:
         )
         element = results[0] if results else None
         return element
+
+    def find_all(
+        self,
+        name=None,
+        attrs={},
+        recursive=True,
+        string=None,
+        limit=None,
+        **kwargs,
+    ):  # -> ResultSet:
+        """Look in the children of this PageElement and find all
+        PageElements that match the given criteria.
+
+        All find_* methods take a common set of arguments. See the online
+        documentation for detailed explanations.
+
+        :param name: A filter on tag name.
+        :param attrs: A dictionary of filters on attribute values.
+        :param recursive: If this is True, find_all() will perform a
+            recursive search of this PageElement's children. Otherwise,
+            only the direct children will be considered.
+        :param limit: Stop looking after finding this many results.
+        :kwargs: A dictionary of filters on attribute values.
+        :return: A ResultSet of PageElements.
+        :rtype: bisque.element.ResultSet
+        """
+        generator = self.descendants
+        if not recursive:
+            generator = self.children
+        _stacklevel = kwargs.pop("_stacklevel", 2)
+        return self._find_all(
+            name,
+            attrs,
+            string,
+            limit,
+            generator,
+            _stacklevel=_stacklevel + 1,
+            **kwargs,
+        )
 
     # Generator methods
 
