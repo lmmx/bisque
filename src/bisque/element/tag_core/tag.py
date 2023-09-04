@@ -326,7 +326,7 @@ class BaseTag:
             i.contents = []
             i.decomposed = True
             i.clear()
-            # Only needs repeating for Pydantic models
+            # Only needs repeating for Pydantic models (possible error in parent ref?)
             if isinstance(i, BaseModel):
                 i.contents = []
                 i.decomposed = True

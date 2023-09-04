@@ -30,14 +30,43 @@ class BaseNavigableString(StrRecord, validate_assignment=True):
     PREFIX: str = ""
     SUFFIX: str = ""
 
-    def __init__(self, value: str, **kwargs) -> None:
-        super().__init__(value=value)
+    def __init__(
+        self,
+        value: str,
+        parent=None,
+        previous_element=None,
+        next_element=None,
+        previous_sibling=None,
+        next_sibling=None,
+        contents=None,
+        decomposed=False,
+        PREFIX=None,
+        SUFFIX=None,
+    ) -> None:
+        if contents is None:
+            contents = []
+        if PREFIX is None:
+            PREFIX = self.model_fields["PREFIX"].default
+        if SUFFIX is None:
+            SUFFIX = self.model_fields["SUFFIX"].default
+        super().__init__(
+            value=value,
+            parent=parent,
+            previous_element=previous_element,
+            next_element=next_element,
+            previous_sibling=previous_sibling,
+            next_sibling=next_sibling,
+            contents=contents,
+            decomposed=decomposed,
+            PREFIX=PREFIX,
+            SUFFIX=SUFFIX,
+        )
         self.setup()
 
     def clear(self) -> None:
         self.__dict__.clear()
 
-    def __deepcopy__(self, memo, recursive=False):
+    def __deepcopy__(self, memo={}, recursive=False):
         """A copy of a NavigableString has the same contents and class
         as the original, but it is not connected to the parse tree.
 
@@ -51,7 +80,7 @@ class BaseNavigableString(StrRecord, validate_assignment=True):
         """A copy of a NavigableString can only be a deep copy, because
         only one PageElement can occupy a given place in a parse tree.
         """
-        return self.__deepcopy__({})
+        return self.__deepcopy__()
 
     def __getnewargs__(self):
         return (str(self),)
