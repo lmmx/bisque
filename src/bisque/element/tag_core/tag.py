@@ -499,18 +499,8 @@ class BaseTag(Element):
     def __getattr__(self, tag):
         """Calling tag.subtag is the same as calling tag.find(name="subtag")"""
         # print("Getattr %s.%s" % (self.__class__, tag))
-        if len(tag) > 3 and tag.endswith("Tag"):
-            # BS3: soup.aTag -> "soup.find("a")
-            tag_name = tag[:-3]
-            warnings.warn(
-                '.%(name)sTag is deprecated, use .find("%(name)s") instead. If you really were looking for a tag called %(name)sTag, use .find("%(name)sTag")'
-                % dict(name=tag_name),
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return self.find(tag_name)
         # We special case contents to avoid recursion.
-        elif not tag.startswith("__") and tag != "contents":
+        if not tag.startswith("__") and tag != "contents":
             return self.find(tag)
         raise AttributeError(
             f"'{self.__class__}' object has no attribute '{tag}'",
