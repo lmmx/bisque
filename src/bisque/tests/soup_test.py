@@ -19,6 +19,7 @@ from bisque.element import (
     SoupStrainer,
     Tag,
 )
+from bisque.models import Element
 
 from . import LXML_PRESENT, SoupTest, default_builder
 

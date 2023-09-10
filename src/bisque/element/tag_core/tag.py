@@ -502,9 +502,9 @@ class BaseTag(Element):
         # We special case contents to avoid recursion.
         if not tag.startswith("__") and tag != "contents":
             return self.find(tag)
-        raise AttributeError(
-            f"'{self.__class__}' object has no attribute '{tag}'",
-        )
+        # raise AttributeError(
+        #     f"'{self.__class__}' object has no attribute '{tag}'",
+        # )
 
     def __eq__(self, other):
         """Returns true iff this Tag has the same name, the same attributes,
