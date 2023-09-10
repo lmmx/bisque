@@ -177,7 +177,7 @@ class BaseTag(Element):
             known_xml=known_xml,
             # sourceline=sourceline,
             # sourcepos=sourcepos,
-            can_be_empty_element=can_be_empty_element,
+            can_be_empty_element=can_be_empty_element or False,
             cdata_list_attributes=cdata_list_attributes,
             preserve_whitespace_tags=preserve_whitespace_tags,
             interesting_string_types=interesting_string_types,

@@ -43,7 +43,7 @@ class TestConstructor(SoupTest):
     def test_custom_builder_class(self):
         # Verify that you can pass in a custom Builder class and
         # it'll be instantiated with the appropriate keyword arguments.
-        class Mock:
+        class Mock(TreeBuilder):
             def __init__(self, **kwargs):
                 self.called_with = kwargs
                 self.is_xml = True
@@ -69,12 +69,7 @@ class TestConstructor(SoupTest):
             def prepare_markup(self, *args, **kwargs):
                 yield "prepared markup", "original encoding", "declared encoding", "contains replacement characters"
 
-        kwargs = dict(
-            var="value",
-            # This is a deprecated BS3-era keyword argument, which
-            # will be stripped out.
-            convertEntities=True,
-        )
+        kwargs = dict(var="value")
         with warnings.catch_warnings(record=True):
             soup = Bisque("", builder=Mock, **kwargs)
         assert isinstance(soup.builder, Mock)
