@@ -49,6 +49,7 @@ class BaseTag(Element):
     # invariant
     hidden: bool | int | None = None
     contents: list = []
+    decomposed: bool = Field(False, repr=False)
     parent: Element | None = Field(None, repr=False)
     previous_element: Element | None = Field(None, repr=False)
     next_element: Element | None = Field(None, repr=False)
@@ -70,7 +71,7 @@ class BaseTag(Element):
         is_xml=None,
         sourceline=None,
         sourcepos=None,
-        can_be_empty_element=None,
+        can_be_empty_element=False,
         cdata_list_attributes=None,
         preserve_whitespace_tags=None,
         interesting_string_types=None,
@@ -114,6 +115,13 @@ class BaseTag(Element):
         """
         if cdata_list_attributes is None:
             cdata_list_attributes = []
+        if preserve_whitespace_tags is None:
+            preserve_whitespace_tags = []
+        if interesting_string_types is None:
+            interesting_string_types = (
+                self.TYPE_TABLE.NavigableString,
+                self.TYPE_TABLE.CData,
+            )
         if name is None:
             raise ValueError("No value provided for new tag's name.")
         namespaces = namespaces or {}
@@ -152,11 +160,6 @@ class BaseTag(Element):
                 # This sort of tag uses a special string container subclass for most of
                 # its strings. When we ask the (...rest of this comment is missing?)
                 interesting_string_types = builder.string_containers[name]
-            else:
-                interesting_string_types = (
-                    self.TYPE_TABLE.NavigableString,
-                    self.TYPE_TABLE.CData,
-                )
         # We don't store the parser object so extracted chunks get garbage-collected.
         parser_class = None if parser is None else parser.__class__
         # If possible, determine ahead of time whether this tag is an XML tag.
