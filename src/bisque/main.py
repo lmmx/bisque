@@ -454,10 +454,15 @@ class Bisque(Tag, arbitrary_types_allowed=True):
             self.popTag()
 
     def reset(self):
-        """Reset this object to a state as though it had never parsed any
-        markup.
         """
-        Tag.__init__(self, parser=self, builder=self.builder, name=self.ROOT_TAG_NAME)
+        Reset this object to a state as though it had never parsed any markup.
+        """
+        # This isn't good: instead just overwrite Tag model fields with defaults
+        tmp_tag = Tag(parser=self, builder=self.builder, name=self.ROOT_TAG_NAME)
+        for field_name, field_info in Tag.model_fields.items():
+            tmp_value = getattr(tmp_tag, field_name)
+            if not isinstance(field_info.default, property):
+                setattr(self, field_name, tmp_value)
         self.hidden = 1
         self.builder.reset()
         self.current_data = []

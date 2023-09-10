@@ -122,15 +122,14 @@ class BaseTag(Element):
                 self.TYPE_TABLE.NavigableString,
                 self.TYPE_TABLE.CData,
             )
+        # This seems fragile but can no longer support this logic without a sentinel
+        if (not builder or builder.store_line_numbers) and (
+            sourceline is not None or sourcepos is not None
+        ):
+            kwargs.update(dict(sourceline=sourceline, sourcepos=sourcepos))
         if name is None:
             raise ValueError("No value provided for new tag's name.")
         namespaces = namespaces or {}
-        # This seems fragile but can no longer support this logic without a sentinel
-        # if (not builder or builder.store_line_numbers) and (
-        #     sourceline is not None or sourcepos is not None
-        # ):
-        #     self.sourceline = sourceline
-        #     self.sourcepos = sourcepos
         if attrs is None:
             attrs = {}
         elif attrs:
@@ -176,8 +175,8 @@ class BaseTag(Element):
             parent=parent,
             previous=previous,
             known_xml=known_xml,
-            sourceline=sourceline,
-            sourcepos=sourcepos,
+            # sourceline=sourceline,
+            # sourcepos=sourcepos,
             can_be_empty_element=can_be_empty_element,
             cdata_list_attributes=cdata_list_attributes,
             preserve_whitespace_tags=preserve_whitespace_tags,
