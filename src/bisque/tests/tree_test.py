@@ -1083,9 +1083,9 @@ class TestTreeModification(SoupTest):
         f_tag = soup.new_tag("f")
         a_string = "Random Text"
         soup.c.replace_with(d_tag, e_tag, a_string, f_tag)
+        decoded_str = soup.decode()
         assert (
-            soup.decode()
-            == "<a><b></b><d>Text In D Tag</d><e></e>Random Text<f></f></a>"
+            decoded_str == "<a><b></b><d>Text In D Tag</d><e></e>Random Text<f></f></a>"
         )
         assert soup.b.next_element == d_tag
         assert d_tag.string.next_element == e_tag

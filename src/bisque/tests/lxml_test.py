@@ -107,7 +107,7 @@ class TestLXMLXMLTreeBuilder(SoupTest, XMLTreeBuilderSmokeTest):
         # Un-prefixed namespaces are not included, and if a given
         # prefix is defined twice, only the first prefix encountered
         # in the document shows up here.
-        assert soup._namespaces == {
+        assert soup.namespaces == {
             "xml": "http://www.w3.org/XML/1998/namespace",
             "prefix": "http://prefixed-namespace.com",
             "prefix2": "http://another-namespace.com",
@@ -120,21 +120,21 @@ class TestLXMLXMLTreeBuilder(SoupTest, XMLTreeBuilderSmokeTest):
         # one (the first one), and it will be recognized as the
         # default namespace by chinois, even when operating from a
         # tag with a different un-prefixed namespace.
-        assert soup.tag._namespaces == {
+        assert soup.tag.namespaces == {
             "xml": "http://www.w3.org/XML/1998/namespace",
         }
 
-        assert soup.tag2._namespaces == {
+        assert soup.tag2.namespaces == {
             "prefix": "http://prefixed-namespace.com",
             "xml": "http://www.w3.org/XML/1998/namespace",
         }
 
-        assert soup.subtag._namespaces == {
+        assert soup.subtag.namespaces == {
             "prefix2": "http://another-namespace.com",
             "xml": "http://www.w3.org/XML/1998/namespace",
         }
 
-        assert soup.subsubtag._namespaces == {
+        assert soup.subsubtag.namespaces == {
             "prefix2": "http://another-namespace.com",
             "xml": "http://www.w3.org/XML/1998/namespace",
         }
@@ -165,7 +165,7 @@ class TestLXMLXMLTreeBuilder(SoupTest, XMLTreeBuilderSmokeTest):
 
         # But you can always explicitly specify a namespace dictionary.
         assert (
-            soup.select_one("prefix|tag3", namespaces=soup.subtag._namespaces).name
+            soup.select_one("prefix|tag3", namespaces=soup.subtag.namespaces).name
             == "tag3"
         )
 

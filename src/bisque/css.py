@@ -63,7 +63,7 @@ class CSS:
             # If the selector is a precompiled pattern, it already has
             # a namespace context compiled in, which cannot be
             # replaced.
-            ns = self.tag._namespaces
+            ns = self.tag.namespaces
         return ns
 
     def _rs(self, results):

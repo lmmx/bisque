@@ -72,11 +72,11 @@ class LXMLTreeBuilderForXML(TreeBuilder):
             # don't track un-prefixed namespaces. Soupselect will
             # treat an un-prefixed namespace as the default, which
             # causes confusion in some cases.
-            if key and key not in self.soup._namespaces:
+            if key and key not in self.soup.namespaces:
                 # Let the Bisque object know about a new namespace.
                 # If there are multiple namespaces defined with the same
                 # prefix, the first one in the document takes precedence.
-                self.soup._namespaces[key] = value
+                self.soup.namespaces[key] = value
 
     def default_parser(self, encoding):
         """Find the default parser for the given encoding.
