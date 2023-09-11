@@ -3,8 +3,9 @@ import warnings
 from collections import Counter
 from typing import ClassVar
 
+from pydantic import model_serializer
+
 from .builder import builder_registry
-from .builder._htmlparser import HTMLParserTreeBuilder
 from .builder.core import ParserRejectedMarkup, TreeBuilder
 from .element import (
     DEFAULT_OUTPUT_ENCODING,
@@ -110,7 +111,7 @@ class Bisque(Tag, arbitrary_types_allowed=True):
         "To get rid of this warning, pass the additional argument 'features=\"%(parser)s\"' to the Bisque constructor.\n"
     )
 
-    store_on_base: ClassVar[list[str]] = ["builder"]
+    store_on_base: ClassVar[list[str]] = ["builder", "is_xml"]
 
     def __init__(
         self,
@@ -337,32 +338,42 @@ class Bisque(Tag, arbitrary_types_allowed=True):
 
     def __getstate__(self):
         # Frequently a tree builder can't be pickled.
-        d = dict(self.__dict__)
-        if "builder" in d and d["builder"] is not None and not self.builder.picklable:
-            d["builder"] = type(self.builder)
+        d = self.model_dump()
+        # d = dict(self.__dict__)
+        # You could do this more neatly with a match statement for builder.picklable
+        pickled_builder = (
+            type(self.builder)
+            if (self.builder is not None and not self.builder.picklable)
+            else self.builder
+        )
+        d["builder"] = pickled_builder
         # Store the contents as a Unicode string.
-        d["contents"] = []
-        d["markup"] = self.decode()
+        # d["contents"] = []
+        # d["markup"] = self.decode()
 
         # If most_recent_element is present, it's a Tag object left
         # over from initial parse. It might not be picklable and we
         # don't need it.
-        if "most_recent_element" in d:
-            del d["most_recent_element"]
+        # if "most_recent_element" in d:
+        #     del d["most_recent_element"]
         return d
 
+    @model_serializer
+    def ser_model(self) -> dict:
+        return {
+            "markup": self.decode(),
+            "builder": self.builder,
+            # "features": self.builder.features, # Potential alternative to builder?
+            "parse_only": self.parse_only,
+            "element_classes": self.element_classes,
+            "from_encoding": self.original_encoding,  # I think this is right?
+            # exclude_encodings=None, # add to data model?
+            # **kwargs, # add to data model?
+        }
+
     def __setstate__(self, state):
-        # If necessary, restore the TreeBuilder by looking it up.
-        self.__dict__ = state
-        if isinstance(self.builder, type):
-            self.builder = self.builder()
-        elif not self.builder:
-            # We don't know which builder was used to build this
-            # parse tree, so use a default we know is always available.
-            self.builder = HTMLParserTreeBuilder()
-        self.builder.soup = self
-        self.reset()
-        self._feed()
+        new_obj = self.__class__.model_validate(state)
+        state = self.__dict__ = new_obj.__dict__
         return state
 
     @classmethod
