@@ -73,8 +73,10 @@ class TestHTMLParserTreeBuilder(SoupTest, HTMLTreeBuilderSmokeTest):
 
         # You can deactivate this behavior.
         soup = self.soup(markup, store_line_numbers=False)
-        assert "sourceline" == soup.p.sourceline.name
-        assert "sourcepos" == soup.p.sourcepos.name
+        assert None == soup.p.sourceline
+        assert None == soup.p.sourcepos
+        assert "sourceline" == soup.p.find("sourceline").name
+        assert "sourcepos" == soup.p.find("sourcepos").name
 
     def test_on_duplicate_attribute(self):
         # The html.parser tree builder has a variety of ways of

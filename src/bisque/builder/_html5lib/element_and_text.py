@@ -49,7 +49,7 @@ class Element(treebuilder_base.Node):
             old_element = self.element.contents[-1]
             new_element = self.soup.new_string(old_element + string_child)
             old_element.replace_with(new_element)
-            self.soup._most_recent_element = new_element
+            self.soup.most_recent_element = new_element
         else:
             if isinstance(node, StrTypes):
                 # Create a brand new NavigableString from this string.

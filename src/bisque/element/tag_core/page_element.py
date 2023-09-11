@@ -6,12 +6,13 @@ from typing import ClassVar
 
 from bisque.formatter import Formatter, HTMLFormatter, XMLFormatter
 
+from ...models import Element
 from ..sentinels import DEFAULT_TYPES_SENTINEL
 
 __all__ = ["BasePageElement"]
 
 
-class BasePageElement:
+class BasePageElement(Element):
     """Standalone methods and attributes for PageElement.
 
     Contains the navigational information for some part of the page:
@@ -26,7 +27,7 @@ class BasePageElement:
     # In general, we can't tell just by looking at an element whether
     # it's contained in an XML document or an HTML document. But for
     # Tags (q.v.) we can store this information at parse time.
-    known_xml = None
+    known_xml: bool | None = None
 
     def setup(
         self,
@@ -679,24 +680,6 @@ class BasePageElement:
             _stacklevel=_stacklevel + 1,
             **kwargs,
         )
-
-    @property
-    def next(self):
-        """The PageElement, if any, that was parsed just after this one.
-
-        :return: A PageElement.
-        :rtype: bisque.element.Tag | bisque.element.NavigableString
-        """
-        return self.next_element
-
-    @property
-    def previous(self):
-        """The PageElement, if any, that was parsed just before this one.
-
-        :return: A PageElement.
-        :rtype: bisque.element.Tag | bisque.element.NavigableString
-        """
-        return self.previous_element
 
     # These methods do the real heavy lifting.
 

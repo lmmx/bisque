@@ -1,16 +1,19 @@
 import sys
 import warnings
 from collections import Counter
+from typing import ClassVar
+
+from pydantic import model_serializer
 
 from .builder import builder_registry
-from .builder._htmlparser import HTMLParserTreeBuilder
-from .builder.core import ParserRejectedMarkup
+from .builder.core import ParserRejectedMarkup, TreeBuilder
 from .element import (
     DEFAULT_OUTPUT_ENCODING,
     PYTHON_SPECIFIC_ENCODINGS,
     NavigableString,
     Tag,
 )
+from .models import Element  # noqa: F401 # needed for model_rebuild
 
 __all__ = [
     "GuessedAtParserWarning",
@@ -35,7 +38,7 @@ class MarkupResemblesLocatorWarning(UserWarning):
     """
 
 
-class Bisque(Tag):
+class Bisque(Tag, arbitrary_types_allowed=True):
     """A data structure representing a parsed HTML or XML document.
 
     Most of the methods you'll call on a Bisque object are inherited from
@@ -66,20 +69,49 @@ class Bisque(Tag):
     handle_endtag.
     """
 
+    element_classes: dict = {}
+    builder: type[TreeBuilder] | TreeBuilder | None = None
+    is_xml: bool | None = False
+    known_xml: bool = False
+    namespaces: dict = {}
+    parse_only: object | None = None  # TODO annotate as SoupStrainer
+    markup: str | None = ""
+    original_encoding: str | None = None
+    declared_html_encoding: str | None = None
+    contains_replacement_characters: bool = False
+
+    # TODO
+    hidden: int | bool | None = None
+    current_data: list = []
+    currentTag: Tag = None
+    tagStack: list = []
+    open_tag_counter: Counter = Counter()
+    preserve_whitespace_tag_stack: list = []
+    string_container_stack: list = []
+    most_recent_element: Tag | None = None
+
     # Since Bisque subclasses Tag, it's possible to treat it as
     # a Tag with a .name. This name makes it clear the Bisque
     # object isn't a real markup tag.
-    ROOT_TAG_NAME = "[document]"
+    ROOT_TAG_NAME: ClassVar[str] = "[document]"
 
     # If the end-user gives no indication which tree builder they
     # want, look for one with these features.
-    DEFAULT_BUILDER_FEATURES = ["html", "fast"]
+    DEFAULT_BUILDER_FEATURES: ClassVar[list[str]] = ["html", "fast"]
 
     # A string containing all ASCII whitespace characters, used in
     # endData() to detect data chunks that seem 'empty'.
-    ASCII_SPACES = "\x20\x0a\x09\x0c\x0d"
+    ASCII_SPACES: ClassVar[str] = "\x20\x0a\x09\x0c\x0d"
 
-    NO_PARSER_SPECIFIED_WARNING = "No parser was explicitly specified, so I'm using the best available %(markup_type)s parser for this system (\"%(parser)s\"). This usually isn't a problem, but if you run this code on another system, or in a different virtual environment, it may use a different parser and behave differently.\n\nThe code that caused this warning is on line %(line_number)s of the file %(filename)s. To get rid of this warning, pass the additional argument 'features=\"%(parser)s\"' to the Bisque constructor.\n"
+    NO_PARSER_SPECIFIED_WARNING: ClassVar[str] = (
+        'No parser was explicitly specified, so I\'m using the best available %(markup_type)s parser for this system ("%(parser)s"). '
+        "This usually isn't a problem, but if you run this code on another system, or in a different virtual environment, "
+        "it may use a different parser and behave differently.\n\n"
+        "The code that caused this warning is on line %(line_number)s of the file %(filename)s. "
+        "To get rid of this warning, pass the additional argument 'features=\"%(parser)s\"' to the Bisque constructor.\n"
+    )
+
+    store_on_base: ClassVar[list[str]] = ["builder", "is_xml"]
 
     def __init__(
         self,
@@ -142,72 +174,13 @@ class Bisque(Tag):
          TreeBuilder by passing in arguments, not just by saying which
          one to use.
         """
-        if "convertEntities" in kwargs:
-            del kwargs["convertEntities"]
-            warnings.warn(
-                "BS4 does not respect the convertEntities argument to the "
-                "Bisque constructor. Entities are always converted "
-                "to Unicode characters.",
-            )
-
-        if "markupMassage" in kwargs:
-            del kwargs["markupMassage"]
-            warnings.warn(
-                "BS4 does not respect the markupMassage argument to the "
-                "Bisque constructor. The tree builder is responsible "
-                "for any necessary markup massage.",
-            )
-
-        if "smartQuotesTo" in kwargs:
-            del kwargs["smartQuotesTo"]
-            warnings.warn(
-                "BS4 does not respect the smartQuotesTo argument to the "
-                "Bisque constructor. Smart quotes are always converted "
-                "to Unicode characters.",
-            )
-
-        if "selfClosingTags" in kwargs:
-            del kwargs["selfClosingTags"]
-            warnings.warn(
-                "BS4 does not respect the selfClosingTags argument to the "
-                "Bisque constructor. The tree builder is responsible "
-                "for understanding self-closing tags.",
-            )
-
-        if "isHTML" in kwargs:
-            del kwargs["isHTML"]
-            warnings.warn(
-                "BS4 does not respect the isHTML argument to the "
-                "Bisque constructor. Suggest you use "
-                "features='lxml' for HTML and features='lxml-xml' for "
-                "XML.",
-            )
-
-        def deprecated_argument(old_name, new_name):
-            if old_name in kwargs:
-                warnings.warn(
-                    'The "%s" argument to the Bisque constructor '
-                    'has been renamed to "%s."' % (old_name, new_name),
-                    DeprecationWarning,
-                    stacklevel=3,
-                )
-                return kwargs.pop(old_name)
-            return None
-
-        parse_only = parse_only or deprecated_argument("parseOnlyThese", "parse_only")
-
-        from_encoding = from_encoding or deprecated_argument(
-            "fromEncoding",
-            "from_encoding",
-        )
-
         if from_encoding and isinstance(markup, str):
             warnings.warn(
                 "You provided Unicode markup but also provided a value for from_encoding. Your from_encoding will be ignored.",
             )
             from_encoding = None
 
-        self.element_classes = element_classes or dict()
+        element_classes = element_classes or dict()
 
         # We need this information to track whether or not the builder
         # was specified well enough that we can omit the 'you need to
@@ -231,7 +204,6 @@ class Bisque(Tag):
                     "requested: %s. Do you need to install a parser library?"
                     % ",".join(features),
                 )
-
         # At this point either we have a TreeBuilder instance in
         # builder, or we have a builder_class that we can instantiate
         # with the remaining **kwargs.
@@ -247,11 +219,7 @@ class Bisque(Tag):
             ):
                 # The user did not tell us which TreeBuilder to use,
                 # and we had to guess. Issue a warning.
-                if builder.is_xml:
-                    markup_type = "XML"
-                else:
-                    markup_type = "HTML"
-
+                markup_type = "XML" if builder.is_xml else "HTML"
                 # This code adapted from warnings.py so that we get the same line
                 # of code as our warnings.warn() call gets, even if the answer is wrong
                 # (as it may be in a multithreading situation).
@@ -291,12 +259,24 @@ class Bisque(Tag):
                     "Keyword arguments to the Bisque constructor will be ignored. These would normally be passed into the TreeBuilder constructor, but a TreeBuilder instance was passed in as `builder`.",
                 )
 
-        self.builder = builder
-        self.is_xml = builder.is_xml
-        self.known_xml = self.is_xml
-        self._namespaces = dict()
-        self.parse_only = parse_only
-
+        # kwargs to parent model init method (Base)Tag, not necessarily its fields
+        parent_model_init_kwargs = dict(
+            name=self.ROOT_TAG_NAME,
+            is_xml=builder.is_xml,  # prev also known_xml but this was not being used!
+            # namespaces={} on fall through to default
+        )
+        # kwargs to current data model
+        data_model_kwargs = dict(
+            element_classes=element_classes,
+            builder=builder,
+            parse_only=parse_only,
+            # the remaining 4 fall through to default (we rewrite after initialisation):
+            # markup=None
+            # original_encoding=None
+            # declared_html_encoding=None
+            # contains_replacement_characters=False
+        )
+        super().__init__(**parent_model_init_kwargs, **data_model_kwargs)
         if hasattr(markup, "read"):  # It's a file-type object.
             markup = markup.read()
         elif len(markup) <= 256 and (
@@ -309,20 +289,20 @@ class Bisque(Tag):
             # since that is sometimes the intended behavior.
             if not self._markup_is_url(markup):
                 self._markup_resembles_filename(markup)
-
         rejections = []
         success = False
-        for (
-            self.markup,
-            self.original_encoding,
-            self.declared_html_encoding,
-            self.contains_replacement_characters,
-        ) in self.builder.prepare_markup(
+        for prepared in self.builder.prepare_markup(
             markup,
             from_encoding,
             exclude_encodings=exclude_encodings,
         ):
             self.reset()
+            (
+                self.markup,
+                self.original_encoding,
+                self.declared_html_encoding,
+                self.contains_replacement_characters,
+            ) = prepared
             self.builder.initialize_soup(self)
             try:
                 self._feed()
@@ -330,14 +310,14 @@ class Bisque(Tag):
                 break
             except ParserRejectedMarkup as e:
                 rejections.append(e)
-
         if not success:
             other_exceptions = [str(e) for e in rejections]
             raise ParserRejectedMarkup(
-                "The markup you provided was rejected by the parser. Trying a different parser or a different encoding may help.\n\nOriginal exception(s) from parser:\n "
+                "The markup you provided was rejected by the parser. "
+                + "Trying a different parser or a different encoding may help.\n\n"
+                + "Original exception(s) from parser:\n "
                 + "\n ".join(other_exceptions),
             )
-
         # Clear out the markup and remove the builder's circular
         # reference to this object.
         self.markup = None
@@ -358,32 +338,42 @@ class Bisque(Tag):
 
     def __getstate__(self):
         # Frequently a tree builder can't be pickled.
-        d = dict(self.__dict__)
-        if "builder" in d and d["builder"] is not None and not self.builder.picklable:
-            d["builder"] = type(self.builder)
+        d = self.model_dump()
+        # d = dict(self.__dict__)
+        # You could do this more neatly with a match statement for builder.picklable
+        pickled_builder = (
+            type(self.builder)
+            if (self.builder is not None and not self.builder.picklable)
+            else self.builder
+        )
+        d["builder"] = pickled_builder
         # Store the contents as a Unicode string.
-        d["contents"] = []
-        d["markup"] = self.decode()
+        # d["contents"] = []
+        # d["markup"] = self.decode()
 
-        # If _most_recent_element is present, it's a Tag object left
+        # If most_recent_element is present, it's a Tag object left
         # over from initial parse. It might not be picklable and we
         # don't need it.
-        if "_most_recent_element" in d:
-            del d["_most_recent_element"]
+        # if "most_recent_element" in d:
+        #     del d["most_recent_element"]
         return d
 
+    @model_serializer
+    def ser_model(self) -> dict:
+        return {
+            "markup": self.decode(),
+            "builder": self.builder,
+            # "features": self.builder.features, # Potential alternative to builder?
+            "parse_only": self.parse_only,
+            "element_classes": self.element_classes,
+            "from_encoding": self.original_encoding,  # I think this is right?
+            # exclude_encodings=None, # add to data model?
+            # **kwargs, # add to data model?
+        }
+
     def __setstate__(self, state):
-        # If necessary, restore the TreeBuilder by looking it up.
-        self.__dict__ = state
-        if isinstance(self.builder, type):
-            self.builder = self.builder()
-        elif not self.builder:
-            # We don't know which builder was used to build this
-            # parse tree, so use a default we know is always available.
-            self.builder = HTMLParserTreeBuilder()
-        self.builder.soup = self
-        self.reset()
-        self._feed()
+        new_obj = self.__class__.model_validate(state)
+        state = self.__dict__ = new_obj.__dict__
         return state
 
     @classmethod
@@ -475,10 +465,15 @@ class Bisque(Tag):
             self.popTag()
 
     def reset(self):
-        """Reset this object to a state as though it had never parsed any
-        markup.
         """
-        Tag.__init__(self, self, self.builder, self.ROOT_TAG_NAME)
+        Reset this object to a state as though it had never parsed any markup.
+        """
+        # This isn't good: instead just overwrite Tag model fields with defaults
+        tmp_tag = Tag(parser=self, builder=self.builder, name=self.ROOT_TAG_NAME)
+        for field_name, field_info in Tag.model_fields.items():
+            tmp_value = getattr(tmp_tag, field_name)
+            if not isinstance(field_info.default, property):
+                setattr(self, field_name, tmp_value)
         self.hidden = 1
         self.builder.reset()
         self.current_data = []
@@ -487,7 +482,7 @@ class Bisque(Tag):
         self.open_tag_counter = Counter()
         self.preserve_whitespace_tag_stack = []
         self.string_container_stack = []
-        self._most_recent_element = None
+        self.most_recent_element = None
         self.pushTag(self)
 
     def new_tag(
@@ -639,7 +634,7 @@ class Bisque(Tag):
         if most_recent_element is not None:
             previous_element = most_recent_element
         else:
-            previous_element = self._most_recent_element
+            previous_element = self.most_recent_element
 
         next_element = previous_sibling = next_sibling = None
         if isinstance(o, Tag):
@@ -652,7 +647,7 @@ class Bisque(Tag):
         fix = parent.next_element is not None
         o.setup(parent, previous_element, next_element, previous_sibling, next_sibling)
 
-        self._most_recent_element = o
+        self.most_recent_element = o
         parent.contents.append(o)
 
         # Check if we are inserting into an already parsed node.
@@ -778,16 +773,16 @@ class Bisque(Tag):
             nsprefix,
             attrs,
             self.currentTag,
-            self._most_recent_element,
+            self.most_recent_element,
             sourceline=sourceline,
             sourcepos=sourcepos,
             namespaces=namespaces,
         )
         if tag is None:
             return tag
-        if self._most_recent_element is not None:
-            self._most_recent_element.next_element = tag
-        self._most_recent_element = tag
+        if self.most_recent_element is not None:
+            self.most_recent_element.next_element = tag
+        self.most_recent_element = tag
         self.pushTag(tag)
         return tag
 
@@ -843,6 +838,9 @@ class Bisque(Tag):
             formatter,
             iterator,
         )
+
+
+Bisque.model_rebuild()
 
 
 class StopParsing(Exception):

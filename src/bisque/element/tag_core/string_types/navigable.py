@@ -31,13 +31,14 @@ class BaseNavigableString(StrRecord, validate_assignment=True):
     SUFFIX: str = ""
 
     def __init__(self, value: str, **kwargs) -> None:
-        super().__init__(value=value)
+        super().__init__(value=value, **kwargs)
         self.setup()
+        return
 
     def clear(self) -> None:
         self.__dict__.clear()
 
-    def __deepcopy__(self, memo, recursive=False):
+    def __deepcopy__(self, memo={}, recursive=False):
         """A copy of a NavigableString has the same contents and class
         as the original, but it is not connected to the parse tree.
 
@@ -51,7 +52,7 @@ class BaseNavigableString(StrRecord, validate_assignment=True):
         """A copy of a NavigableString can only be a deep copy, because
         only one PageElement can occupy a given place in a parse tree.
         """
-        return self.__deepcopy__({})
+        return self.__deepcopy__()
 
     def __getnewargs__(self):
         return (str(self),)

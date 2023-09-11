@@ -1,21 +1,25 @@
 from __future__ import annotations
 
 import warnings
-from typing import Iterator
+from typing import Any, ClassVar, Iterator
 
-from pydantic import BaseModel
+from pydantic import Field
 
 from bisque.css import CSS
 from bisque.formatter import Formatter
+from bisque.models import Element, Entity
 
+# from ...models import Element, Entity
 from ..attributes import AttributeValueWithCharsetSubstitution
 from ..encodings import DEFAULT_OUTPUT_ENCODING
 from ..sentinels import DEFAULT_TYPES_SENTINEL, ElementEvent
 
 __all__ = ["BaseTag"]
 
+AnyElement = Any
 
-class BaseTag:
+
+class BaseTag(Element):
     """Standalone methods and attributes for Tag.
 
     Represents an HTML or XML tag that is part of a parse tree, along
@@ -24,6 +28,35 @@ class BaseTag:
     When Bisque parses the markup <b>penguin</b>, it will
     create a Tag object representing the <b> tag.
     """
+
+    # validated
+    name: str
+    namespace: str | None = None
+    prefix: str | None = None
+    attrs: dict = {}
+    parent: Element | None = None  # TODO annotate as element (can't use Any)
+    previous: Element | None = None  # TODO annotate as element (can't use Any)
+    known_xml: bool | None = False
+    sourceline: int | None = None
+    sourcepos: int | None = None
+    can_be_empty_element: bool = False
+    cdata_list_attributes: list[str] | dict | None = []
+    preserve_whitespace_tags: list[str] = []
+    interesting_string_types: type | tuple[type, ...]  # default set in init
+    namespaces: dict = {}
+    # computed
+    parser_class: type | None = None
+    # invariant
+    hidden: bool | int | None = None
+    contents: list = []
+    decomposed: bool = Field(False, repr=False)
+    parent: Element | None = Field(None, repr=False)
+    previous_element: Element | None = Field(None, repr=False)
+    next_element: Element | None = Field(None, repr=False)
+    previous_sibling: Element | None = Field(None, repr=False)
+    next_sibling: Element | None = Field(None, repr=False)
+    # class variables
+    store_on_base: ClassVar[list[str]] = []
 
     def __init__(
         self,
@@ -38,11 +71,12 @@ class BaseTag:
         is_xml=None,
         sourceline=None,
         sourcepos=None,
-        can_be_empty_element=None,
+        can_be_empty_element=False,
         cdata_list_attributes=None,
         preserve_whitespace_tags=None,
         interesting_string_types=None,
         namespaces=None,
+        **kwargs,
     ):
         """Basic constructor.
 
@@ -79,82 +113,81 @@ class BaseTag:
             namespace prefixes to URIs. This can be used later to
             construct CSS selectors.
         """
-        if parser is None:
-            self.parser_class = None
-        else:
-            # We don't actually store the parser object: that lets extracted
-            # chunks be garbage-collected.
-            self.parser_class = parser.__class__
-        if name is None:
-            raise ValueError("No value provided for new tag's name.")
-        self.name = name
-        self.namespace = namespace
-        self._namespaces = namespaces or {}
-        self.prefix = prefix
+        if cdata_list_attributes is None:
+            cdata_list_attributes = []
+        if preserve_whitespace_tags is None:
+            preserve_whitespace_tags = []
+        if interesting_string_types is None:
+            interesting_string_types = (
+                self.TYPE_TABLE.NavigableString,
+                self.TYPE_TABLE.CData,
+            )
+        # This seems fragile but can no longer support this logic without a sentinel
         if (not builder or builder.store_line_numbers) and (
             sourceline is not None or sourcepos is not None
         ):
-            self.sourceline = sourceline
-            self.sourcepos = sourcepos
+            kwargs.update(dict(sourceline=sourceline, sourcepos=sourcepos))
+        if name is None:
+            raise ValueError("No value provided for new tag's name.")
+        namespaces = namespaces or {}
         if attrs is None:
             attrs = {}
         elif attrs:
             if builder is not None and builder.cdata_list_attributes:
-                attrs = builder._replace_cdata_list_attribute_values(self.name, attrs)
+                attrs = builder._replace_cdata_list_attribute_values(name, attrs)
             else:
                 attrs = dict(attrs)
         else:
             attrs = dict(attrs)
-
-        # If possible, determine ahead of time whether this tag is an
-        # XML tag.
-        if builder:
-            self.known_xml = builder.is_xml
-        else:
-            self.known_xml = is_xml
-        self.attrs = attrs
-        self.contents = []
-        self.setup(parent, previous)
-        self.hidden = False
-
-        if builder is None:
-            # In the absence of a TreeBuilder, use whatever values were
-            # passed in here. They're probably None, unless this is a copy of some
-            # other tag.
-            self.can_be_empty_element = can_be_empty_element
-            self.cdata_list_attributes = cdata_list_attributes
-            self.preserve_whitespace_tags = preserve_whitespace_tags
-            self.interesting_string_types = interesting_string_types
-        else:
-            # Set up any substitutions for this tag, such as the charset in a META tag.
-            builder.set_up_substitutions(self)
-
+        # In the absence of a TreeBuilder, use whatever values were passed in here.
+        # They're probably None, unless this is a copy of some other tag.
+        if builder is not None:
             # Ask the TreeBuilder whether this tag might be an empty-element tag.
-            self.can_be_empty_element = builder.can_be_empty_element(name)
-
-            # Keep track of the list of attributes of this tag that
-            # might need to be treated as a list.
+            can_be_empty_element = builder.can_be_empty_element(name)
+            # Keep track of the list of attributes of this tag that might need to
+            # be treated as a list.
             #
-            # For performance reasons, we store the whole data structure
-            # rather than asking the question of every tag. Asking would
-            # require building a new data structure every time, and
-            # (unlike can_be_empty_element), we almost never need
-            # to check this.
-            self.cdata_list_attributes = builder.cdata_list_attributes
-
+            # For performance reasons, we store the whole data structure rather than
+            # asking the question of every tag. Asking would require building a new
+            # data structure every time, and (unlike can_be_empty_element), we almost
+            # never need to check this.
+            cdata_list_attributes = builder.cdata_list_attributes
             # Keep track of the names that might cause this tag to be treated as a
             # whitespace-preserved tag.
-            self.preserve_whitespace_tags = builder.preserve_whitespace_tags
-
-            if self.name in builder.string_containers:
-                # This sort of tag uses a special string container
-                # subclass for most of its strings. When we ask the
-                self.interesting_string_types = builder.string_containers[self.name]
-            else:
-                self.interesting_string_types = (
-                    self.TYPE_TABLE.NavigableString,
-                    self.TYPE_TABLE.CData,
-                )
+            preserve_whitespace_tags = builder.preserve_whitespace_tags
+            if name in builder.string_containers:
+                # This sort of tag uses a special string container subclass for most of
+                # its strings. When we ask the (...rest of this comment is missing?)
+                interesting_string_types = builder.string_containers[name]
+        # We don't store the parser object so extracted chunks get garbage-collected.
+        parser_class = None if parser is None else parser.__class__
+        # If possible, determine ahead of time whether this tag is an XML tag.
+        known_xml = is_xml if builder is None else builder.is_xml
+        # Otherwise subclass fields that are also init args to this class aren't set
+        # i.e. prevent them being 'consumed' here by putting them [back] into kwargs
+        kwargs.update({kw: v for kw, v in locals().items() if kw in self.store_on_base})
+        super().__init__(
+            parser_class=parser_class,
+            name=name,
+            namespace=namespace,
+            prefix=prefix,
+            attrs=attrs,
+            parent=parent,
+            previous=previous,
+            known_xml=known_xml,
+            # sourceline=sourceline,
+            # sourcepos=sourcepos,
+            can_be_empty_element=can_be_empty_element or False,
+            cdata_list_attributes=cdata_list_attributes,
+            preserve_whitespace_tags=preserve_whitespace_tags,
+            interesting_string_types=interesting_string_types,
+            namespaces=namespaces,
+            **kwargs,
+        )
+        self.setup(parent, previous)
+        if builder is not None:
+            # Set up any substitutions for this tag, such as the charset in a META tag.
+            builder.set_up_substitutions(self)
 
     def __deepcopy__(self, memo, recursive=True):
         """A deepcopy of a Tag is a new Tag, unconnected to the parse tree.
@@ -295,7 +328,7 @@ class BaseTag:
                 # We're not interested in strings of this type.
                 continue
             if strip:
-                is_model = issubclass(descendant_type, BaseModel)
+                is_model = issubclass(descendant_type, Entity)
                 clone = descendant.model_copy() if is_model else descendant.copy()
                 clone.value = descendant.value.strip()
                 if len(clone) == 0:
@@ -326,8 +359,8 @@ class BaseTag:
             i.contents = []
             i.decomposed = True
             i.clear()
-            # Only needs repeating for Pydantic models
-            if isinstance(i, BaseModel):
+            # Only needs repeating for Pydantic models (possible error in parent ref?)
+            if isinstance(i, Entity):
                 i.contents = []
                 i.decomposed = True
             i = n
@@ -466,22 +499,12 @@ class BaseTag:
     def __getattr__(self, tag):
         """Calling tag.subtag is the same as calling tag.find(name="subtag")"""
         # print("Getattr %s.%s" % (self.__class__, tag))
-        if len(tag) > 3 and tag.endswith("Tag"):
-            # BS3: soup.aTag -> "soup.find("a")
-            tag_name = tag[:-3]
-            warnings.warn(
-                '.%(name)sTag is deprecated, use .find("%(name)s") instead. If you really were looking for a tag called %(name)sTag, use .find("%(name)sTag")'
-                % dict(name=tag_name),
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return self.find(tag_name)
         # We special case contents to avoid recursion.
-        elif not tag.startswith("__") and not tag == "contents":
+        if not tag.startswith("__") and tag != "contents":
             return self.find(tag)
-        raise AttributeError(
-            f"'{self.__class__}' object has no attribute '{tag}'",
-        )
+        # raise AttributeError(
+        #     f"'{self.__class__}' object has no attribute '{tag}'",
+        # )
 
     def __eq__(self, other):
         """Returns true iff this Tag has the same name, the same attributes,

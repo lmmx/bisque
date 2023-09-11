@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-import warnings
-from collections.abc import Callable
+from re import Pattern
+from typing import Callable
+
+from pydantic import BaseModel, computed_field
 
 from bisque.models import StrMixIn, StrTypes
 
 __all__ = ["BaseSoupStrainer"]
 
 
-class BaseSoupStrainer:
+class BaseSoupStrainer(BaseModel):
     """Encapsulates a number of ways of matching a markup element (tag or
     string).
 
@@ -18,7 +20,17 @@ class BaseSoupStrainer:
     document.
     """
 
-    def __init__(self, name=None, attrs={}, string=None, **kwargs):
+    name: str | bool | Pattern | list[str] | list | Callable | None = None
+    attrs: dict = {}
+    string: str | list[str] | bool | Pattern | None = None
+
+    def __init__(
+        self,
+        name: str | bool | Pattern | list[str] | list | Callable | None = None,
+        attrs: dict = {},
+        string: str | list[str] | bool | Pattern | None = None,
+        **kwargs,
+    ):
         """Constructor.
 
         The SoupStrainer constructor takes the same arguments passed
@@ -30,42 +42,33 @@ class BaseSoupStrainer:
         :param string: A filter for a NavigableString with specific text.
         :kwargs: A dictionary of filters on attribute values.
         """
-        if string is None and "text" in kwargs:
-            string = kwargs.pop("text")
-            warnings.warn(
-                "The 'text' argument to the SoupStrainer constructor is deprecated. Use 'string' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-        self.name = self._normalize_search_value(name)
+        normal_name = self._normalize_search_value(name)
         if not isinstance(attrs, dict):
-            # Treat a non-dict value for attrs as a search for the 'class'
-            # attribute.
+            # Treat a non-dict value for attrs as a search for the 'class' attribute.
             kwargs["class"] = attrs
             attrs = None
-
         if "class_" in kwargs:
             # Treat class_="foo" as a search for the 'class'
             # attribute, overriding any non-dict value for attrs.
             kwargs["class"] = kwargs["class_"]
             del kwargs["class_"]
-
         if kwargs:
             if attrs:
                 attrs = attrs.copy()
                 attrs.update(kwargs)
             else:
                 attrs = kwargs
-        normalized_attrs = {}
+        normal_attrs = {}
         for key, value in list(attrs.items()):
-            normalized_attrs[key] = self._normalize_search_value(value)
+            normal_attrs[key] = self._normalize_search_value(value)
+        normal_string = self._normalize_search_value(string)
+        super().__init__(name=normal_name, attrs=normal_attrs, string=normal_string)
 
-        self.attrs = normalized_attrs
-        self.string = self._normalize_search_value(string)
-
-        # DEPRECATED but just in case someone is checking this.
-        self.text = self.string
+    @computed_field
+    @property
+    def text(self) -> str | None:
+        """Allegedly deprecated but still used in tests."""
+        return self.string
 
     def _normalize_search_value(self, value):
         # Leave it alone if it's a Unicode string, a callable, a
