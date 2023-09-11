@@ -681,24 +681,6 @@ class BasePageElement(Element):
             **kwargs,
         )
 
-    @property
-    def next(self):
-        """The PageElement, if any, that was parsed just after this one.
-
-        :return: A PageElement.
-        :rtype: bisque.element.Tag | bisque.element.NavigableString
-        """
-        return self.next_element
-
-    @property
-    def previous(self):
-        """The PageElement, if any, that was parsed just before this one.
-
-        :return: A PageElement.
-        :rtype: bisque.element.Tag | bisque.element.NavigableString
-        """
-        return self.previous_element
-
     # These methods do the real heavy lifting.
 
     def _find_one(self, method, name, attrs, string, **kwargs):
