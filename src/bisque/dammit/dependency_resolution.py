@@ -6,6 +6,7 @@ any of a number of libraries that all support the same API:
 * chardet
 * charset-normalizer
 """
+
 from contextlib import suppress
 
 __all__ = ["chardet_module"]

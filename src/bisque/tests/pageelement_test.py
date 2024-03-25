@@ -1,4 +1,5 @@
 """Tests of the bisque.element.PageElement class"""
+
 import copy
 import pickle
 import sys

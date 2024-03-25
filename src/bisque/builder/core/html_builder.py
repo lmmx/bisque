@@ -3,6 +3,7 @@ Sets a single method `set_up_substitutions` and 5 class variables
 (`empty_element_tags`, `block_elements`, `DEFAULT_STRING_CONTAINERS`,
 `DEFAULT_PRESERVE_WHITESPACE_TAGS`, `DEFAULT_CDATA_LIST_ATTRIBUTES`).
 """
+
 from bisque.element import (
     CharsetMetaAttributeValue,
     ContentMetaAttributeValue,

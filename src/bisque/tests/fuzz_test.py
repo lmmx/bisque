@@ -8,6 +8,7 @@ Grouping these test cases together makes it easy to see which test
 cases represent the same problem, and puts the test cases in close
 proximity to code that can trigger the problems.
 """
+
 import os
 
 import pytest
