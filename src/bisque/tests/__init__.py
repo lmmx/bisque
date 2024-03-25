@@ -343,7 +343,6 @@ class TreeBuilderSmokeTest:
 
 
 class HTMLTreeBuilderSmokeTest(TreeBuilderSmokeTest):
-
     """A basic test of a treebuilder's competence.
 
     Any HTML treebuilder, present or future, should be able to pass

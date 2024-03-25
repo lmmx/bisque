@@ -2,6 +2,7 @@
 Build bytestring and Unicode versions of regular expressions for finding
 a declared encoding inside an XML or HTML document.
 """
+
 import re
 
 __all__ = ["encoding_res"]
