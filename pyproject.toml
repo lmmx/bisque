@@ -41,6 +41,9 @@ html5lib = [
 lxml = [
     "lxml>=4.9.3",
 ]
+dev = [
+    "pre-commit>=4.1.0",
+]
 [project.urls]
 Homepage = "https://github.com/lmmx/bisque"
 Repository = "https://github.com/lmmx/bisque.git"
