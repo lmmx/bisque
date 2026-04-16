@@ -2,6 +2,14 @@
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
+[dependency-groups]
+dev = [
+  "pdbpp>=0.12.1"
+]
+test = [
+  "pytest>=9.0.3"
+]
+
 [project]
 name = "bisque"
 dynamic = ["version"]
@@ -45,24 +53,10 @@ html5lib = [
 lxml = [
   "lxml>=4.9.3"
 ]
-dev = [
-  "pre-commit>=4.1.0"
-]
 
 [project.urls]
 Homepage = "https://github.com/lmmx/bisque"
 Repository = "https://github.com/lmmx/bisque.git"
-
-[tool.isort]
-known_first_party = ["bisque"]
-
-[tool.pdm]
-version = {source = "file", path = "src/bisque/__init__.py"}
-
-[tool.pdm.dev-dependencies]
-test = [
-  "pytest>=7.4.0"
-]
 
 [tool.ruff.lint]
 ignore = [
