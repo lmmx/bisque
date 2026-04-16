@@ -1,8 +1,6 @@
 """Tests to ensure that the lxml tree builder generates good trees."""
 
 import pickle
-import re
-import warnings
 
 import pytest
 
@@ -12,7 +10,6 @@ if LXML_PRESENT:
     from bisque.builder import LXMLTreeBuilder, LXMLTreeBuilderForXML
 
 from bisque import Bisque
-from bisque.element import Comment, Doctype, SoupStrainer
 
 from . import (
     CHINOIS_PRESENT,

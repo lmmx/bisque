@@ -1,16 +1,12 @@
 """Tests of Bisque as a whole."""
 
 import logging
-import os
 import pickle
-import sys
-import tempfile
 import warnings
 
 import pytest
 
 from bisque import Bisque, GuessedAtParserWarning, MarkupResemblesLocatorWarning, dammit
-from bisque.builder import builder_registry
 from bisque.builder.core import ParserRejectedMarkup, TreeBuilder
 from bisque.element import (
     PYTHON_SPECIFIC_ENCODINGS,
@@ -19,7 +15,6 @@ from bisque.element import (
     SoupStrainer,
     Tag,
 )
-from bisque.models import Element
 
 from . import LXML_PRESENT, SoupTest, default_builder
 
@@ -67,7 +62,12 @@ class TestConstructor(SoupTest):
             set_up_substitutions = can_be_empty_element = ignore
 
             def prepare_markup(self, *args, **kwargs):
-                yield "prepared markup", "original encoding", "declared encoding", "contains replacement characters"
+                yield (
+                    "prepared markup",
+                    "original encoding",
+                    "declared encoding",
+                    "contains replacement characters",
+                )
 
         kwargs = dict(var="value")
         with warnings.catch_warnings(record=True):
@@ -105,8 +105,6 @@ class TestConstructor(SoupTest):
             # but feed() will reject both of them.
             yield markup, None, None, False
             yield markup, None, None, False
-
-        import re
 
         with pytest.raises(ParserRejectedMarkup) as exc_info:
             Bisque("", builder=Mock)
@@ -243,7 +241,7 @@ class TestOutput(SoupTest):
         # declaration won't mention any particular encoding.
         soup = Bisque("<tag></tag>", "html.parser")
         soup.is_xml = True
-        assert f'<?xml version="1.0"?>\n<tag></tag>' == soup.decode(
+        assert '<?xml version="1.0"?>\n<tag></tag>' == soup.decode(
             eventual_encoding=eventual_encoding,
         )
 

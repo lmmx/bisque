@@ -7,7 +7,7 @@ import sys
 import pytest
 
 from bisque import Bisque
-from bisque.element import Comment, ResultSet, SoupStrainer
+from bisque.element import Comment, SoupStrainer
 
 from . import SoupTest
 
@@ -216,7 +216,7 @@ class TestFormatters(SoupTest):
         # Here's the <meta> tag saying that a document is
         # encoded in Shift-JIS.
         meta_tag = (
-            '<meta content="text/html; charset=x-sjis" ' 'http-equiv="Content-type"/>'
+            '<meta content="text/html; charset=x-sjis" http-equiv="Content-type"/>'
         )
         soup = self.soup(meta_tag)
 

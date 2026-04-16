@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from re import Pattern
-from typing import Callable
+from collections.abc import Callable
 
 from pydantic import BaseModel, computed_field
 

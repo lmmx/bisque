@@ -141,7 +141,7 @@ class EntitySubstitution:
     }
 
     BARE_AMPERSAND_OR_BRACKET = re.compile(
-        "([<>]|" "&(?!#\\d+;|#x[0-9a-fA-F]+;|\\w+;)" ")",
+        "([<>]|&(?!#\\d+;|#x[0-9a-fA-F]+;|\\w+;))",
     )
 
     AMPERSAND_OR_BRACKET = re.compile("([<>&])")

@@ -14,20 +14,13 @@ import warnings
 import pytest
 
 from bisque import Bisque
-from bisque.builder import HTMLParserTreeBuilder, builder_registry
+from bisque.builder import builder_registry
 from bisque.element import (
     CData,
     Comment,
-    Declaration,
-    Doctype,
-    NavigableString,
-    Script,
     SoupStrainer,
-    Stylesheet,
     Tag,
-    TemplateString,
 )
-from bisque.formatter import Formatter
 
 from . import SoupTest
 
@@ -763,8 +756,7 @@ class TestTreeModification(SoupTest):
         assert bold.parent == second_para
 
         assert soup.decode() == self.document_for(
-            '<p id="1">Don\'t leave me .</p>\n'
-            '<p id="2">Don\'t leave!<b>here</b></p>',
+            '<p id="1">Don\'t leave me .</p>\n<p id="2">Don\'t leave!<b>here</b></p>',
         )
 
     def test_replace_with_returns_thing_that_was_replaced(self):
@@ -1230,7 +1222,7 @@ class TestTreeModification(SoupTest):
         assert "<body>\n\n<a></a>\n</body>" == str(soup.body)
 
     def test_extract_works_when_element_is_surrounded_by_identical_strings(self):
-        soup = self.soup("<html>\n" "<body>hi</body>\n" "</html>")
+        soup = self.soup("<html>\n<body>hi</body>\n</html>")
         soup.find("body").extract()
         assert None == soup.find("body")
 

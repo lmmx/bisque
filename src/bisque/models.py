@@ -1,4 +1,4 @@
-from typing import Iterator  # , TypeVar
+from collections.abc import Iterator  # , TypeVar
 
 from pydantic import BaseModel, RootModel
 
