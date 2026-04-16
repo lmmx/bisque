@@ -1,9 +1,9 @@
 import types
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from bisque import CSS, Bisque, PageElement, ResultSet, Tag
+from bisque import Bisque, PageElement, ResultSet, Tag
 
 from . import CHINOIS_PRESENT, SoupTest
 

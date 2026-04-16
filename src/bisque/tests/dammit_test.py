@@ -305,7 +305,7 @@ class TestEntitySubstitution:
             ("&Not;", "\u2aec"),
             # We _could_ convert | to &verbarr;, but we don't, because
             # | is an ASCII character.
-            ("|" "|"),
+            ("||"),
             # Similarly for the fj ligature, which we could convert to
             # &fjlig;, but we don't.
             ("fj", "fj"),

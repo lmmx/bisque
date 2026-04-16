@@ -2,12 +2,11 @@
 trees."""
 
 import pickle
-import warnings
 
 import pytest
 
 from bisque.builder._htmlparser import BisqueHTMLParser, HTMLParserTreeBuilder
-from bisque.builder.core import ParserRejectedMarkup, XMLParsedAsHTMLWarning
+from bisque.builder.core import ParserRejectedMarkup
 
 from . import HTMLTreeBuilderSmokeTest, SoupTest
 

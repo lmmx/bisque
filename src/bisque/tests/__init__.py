@@ -145,26 +145,26 @@ class SoupTest:
         # Document element should have no previous element or previous sibling.
         # It also shouldn't have a next sibling.
         if el.parent is None:
-            assert (
-                el.previous_element is None
-            ), "Bad previous_element\nNODE: {}\nPREV: {}\nEXPECTED: {}".format(
-                el,
-                el.previous_element,
-                None,
+            assert el.previous_element is None, (
+                "Bad previous_element\nNODE: {}\nPREV: {}\nEXPECTED: {}".format(
+                    el,
+                    el.previous_element,
+                    None,
+                )
             )
-            assert (
-                el.previous_sibling is None
-            ), "Bad previous_sibling\nNODE: {}\nPREV: {}\nEXPECTED: {}".format(
-                el,
-                el.previous_sibling,
-                None,
+            assert el.previous_sibling is None, (
+                "Bad previous_sibling\nNODE: {}\nPREV: {}\nEXPECTED: {}".format(
+                    el,
+                    el.previous_sibling,
+                    None,
+                )
             )
-            assert (
-                el.next_sibling is None
-            ), "Bad next_sibling\nNODE: {}\nNEXT: {}\nEXPECTED: {}".format(
-                el,
-                el.next_sibling,
-                None,
+            assert el.next_sibling is None, (
+                "Bad next_sibling\nNODE: {}\nNEXT: {}\nEXPECTED: {}".format(
+                    el,
+                    el.next_sibling,
+                    None,
+                )
             )
 
         idx = 0
@@ -178,72 +178,72 @@ class SoupTest:
             # That child should have no previous sibling
             if idx == 0:
                 if el.parent is not None:
-                    assert (
-                        el.next_element is child
-                    ), "Bad next_element\nNODE: {}\nNEXT: {}\nEXPECTED: {}".format(
-                        el,
-                        el.next_element,
-                        child,
+                    assert el.next_element is child, (
+                        "Bad next_element\nNODE: {}\nNEXT: {}\nEXPECTED: {}".format(
+                            el,
+                            el.next_element,
+                            child,
+                        )
                     )
-                    assert (
-                        child.previous_element is el
-                    ), "Bad previous_element\nNODE: {}\nPREV: {}\nEXPECTED: {}".format(
-                        child,
-                        child.previous_element,
-                        el,
+                    assert child.previous_element is el, (
+                        "Bad previous_element\nNODE: {}\nPREV: {}\nEXPECTED: {}".format(
+                            child,
+                            child.previous_element,
+                            el,
+                        )
                     )
-                    assert (
-                        child.previous_sibling is None
-                    ), "Bad previous_sibling\nNODE: {}\nPREV {}\nEXPECTED: {}".format(
-                        child,
-                        child.previous_sibling,
-                        None,
+                    assert child.previous_sibling is None, (
+                        "Bad previous_sibling\nNODE: {}\nPREV {}\nEXPECTED: {}".format(
+                            child,
+                            child.previous_sibling,
+                            None,
+                        )
                     )
 
             # If not the first child, previous index should link as sibling to this index
             # Previous element should match the last index or the last bubbled up descendant
             else:
-                assert (
-                    child.previous_sibling is el.contents[idx - 1]
-                ), "Bad previous_sibling\nNODE: {}\nPREV {}\nEXPECTED {}".format(
-                    child,
-                    child.previous_sibling,
-                    el.contents[idx - 1],
+                assert child.previous_sibling is el.contents[idx - 1], (
+                    "Bad previous_sibling\nNODE: {}\nPREV {}\nEXPECTED {}".format(
+                        child,
+                        child.previous_sibling,
+                        el.contents[idx - 1],
+                    )
                 )
-                assert (
-                    el.contents[idx - 1].next_sibling is child
-                ), "Bad next_sibling\nNODE: {}\nNEXT {}\nEXPECTED {}".format(
-                    el.contents[idx - 1],
-                    el.contents[idx - 1].next_sibling,
-                    child,
+                assert el.contents[idx - 1].next_sibling is child, (
+                    "Bad next_sibling\nNODE: {}\nNEXT {}\nEXPECTED {}".format(
+                        el.contents[idx - 1],
+                        el.contents[idx - 1].next_sibling,
+                        child,
+                    )
                 )
 
                 if last_child is not None:
-                    assert (
-                        child.previous_element is last_child
-                    ), "Bad previous_element\nNODE: {}\nPREV {}\nEXPECTED {}\nCONTENTS {}".format(
-                        child,
-                        child.previous_element,
-                        last_child,
-                        child.parent.contents,
+                    assert child.previous_element is last_child, (
+                        "Bad previous_element\nNODE: {}\nPREV {}\nEXPECTED {}\nCONTENTS {}".format(
+                            child,
+                            child.previous_element,
+                            last_child,
+                            child.parent.contents,
+                        )
                     )
-                    assert (
-                        last_child.next_element is child
-                    ), "Bad next_element\nNODE: {}\nNEXT {}\nEXPECTED {}".format(
-                        last_child,
-                        last_child.next_element,
-                        child,
+                    assert last_child.next_element is child, (
+                        "Bad next_element\nNODE: {}\nNEXT {}\nEXPECTED {}".format(
+                            last_child,
+                            last_child.next_element,
+                            child,
+                        )
                     )
 
             if isinstance(child, Tag) and child.contents:
                 descendant = self.linkage_validator(child, True)
                 # A bubbled up descendant should have no next siblings
-                assert (
-                    descendant.next_sibling is None
-                ), "Bad next_sibling\nNODE: {}\nNEXT {}\nEXPECTED {}".format(
-                    descendant,
-                    descendant.next_sibling,
-                    None,
+                assert descendant.next_sibling is None, (
+                    "Bad next_sibling\nNODE: {}\nNEXT {}\nEXPECTED {}".format(
+                        descendant,
+                        descendant.next_sibling,
+                        None,
+                    )
                 )
 
             # Mark last child as either the bubbled up descendant or the current child
@@ -254,12 +254,12 @@ class SoupTest:
 
             # If last child, there are non next siblings
             if idx == last_idx:
-                assert (
-                    child.next_sibling is None
-                ), "Bad next_sibling\nNODE: {}\nNEXT {}\nEXPECTED {}".format(
-                    child,
-                    child.next_sibling,
-                    None,
+                assert child.next_sibling is None, (
+                    "Bad next_sibling\nNODE: {}\nNEXT {}\nEXPECTED {}".format(
+                        child,
+                        child.next_sibling,
+                        None,
+                    )
                 )
             idx += 1
 
@@ -271,21 +271,21 @@ class SoupTest:
             target = el
             while True:
                 if target is None:
-                    assert (
-                        child.next_element is None
-                    ), "Bad next_element\nNODE: {}\nNEXT {}\nEXPECTED {}".format(
-                        child,
-                        child.next_element,
-                        None,
+                    assert child.next_element is None, (
+                        "Bad next_element\nNODE: {}\nNEXT {}\nEXPECTED {}".format(
+                            child,
+                            child.next_element,
+                            None,
+                        )
                     )
                     break
                 elif target.next_sibling is not None:
-                    assert (
-                        child.next_element is target.next_sibling
-                    ), "Bad next_element\nNODE: {}\nNEXT {}\nEXPECTED {}".format(
-                        child,
-                        child.next_element,
-                        target.next_sibling,
+                    assert child.next_element is target.next_sibling, (
+                        "Bad next_element\nNODE: {}\nNEXT {}\nEXPECTED {}".format(
+                            child,
+                            child.next_element,
+                            target.next_sibling,
+                        )
                     )
                     break
                 target = target.parent
@@ -940,7 +940,7 @@ Hello, world!
         # Here's the <meta> tag saying that a document is
         # encoded in Shift-JIS.
         meta_tag = (
-            '<meta content="text/html; charset=x-sjis" ' 'http-equiv="Content-type"/>'
+            '<meta content="text/html; charset=x-sjis" http-equiv="Content-type"/>'
         )
 
         # Here's a document incorporating that meta tag.
@@ -997,7 +997,7 @@ Hello, world!
         # resulting document. Instead, the document will appear to
         # have no encoding.
         for markup in [
-            b'<meta charset="utf8"></head>' b'<meta id="encoding" charset="utf-8" />',
+            b'<meta charset="utf8"></head><meta id="encoding" charset="utf-8" />',
         ]:
             soup = self.soup(markup)
             for encoding in PYTHON_SPECIFIC_ENCODINGS:

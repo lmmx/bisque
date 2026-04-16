@@ -10,8 +10,6 @@ from bisque.element import (
     NamespacedAttribute,
 )
 
-from . import SoupTest
-
 
 class TestNamedspacedAttribute:
     def test_name_may_be_none_or_missing(self):

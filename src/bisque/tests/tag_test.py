@@ -1,5 +1,3 @@
-import warnings
-
 from bisque.element import Comment, NavigableString
 
 from . import SoupTest

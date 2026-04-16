@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, ClassVar, Iterator
+from typing import Any, ClassVar
+from collections.abc import Iterator
 
 from pydantic import Field
 
